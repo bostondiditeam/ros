@@ -101,7 +101,7 @@ started core service [/rosout]
 ## Step 4: Open a new shell to issue ros commands
 
 Assuming that you have already added the `source /opt/ros/<distro>/setup.bash` line to your `.bashrc` in Step 2 above, open a new shell and type `docker ps -l`.
-You should see output similar to the following:
+You should see output similar to the following (Please scroll right to see all columns):
 
 ```
 [Tue Mar 21 13:46] ROS ppoon <503>$ docker ps -l
@@ -109,13 +109,14 @@ CONTAINER ID        IMAGE               COMMAND                  CREATED        
 e97fa7fa281b        ros:indigo          "/ros_entrypoint.s..."   10 minutes ago      Up 10 minutes                           frosty_allen
 ```
 
-Please note the "CONTAINER ID" and the "NAMES" columns (You may need to scroll to the right).  You can use either of these value to attach to the running container that you started in the other shell.
-Please type:
+Please note the values under the "CONTAINER ID" and the "NAMES" columns.  You can use either of these values to attach to the running container that you started in the other shell.
+Please type `docker exec -it <container id or name> bash`.  With the values above:
 
 ```
-docker exec -it <container id or name> bash
+docker exec -it frosty_allen bash
 ```
-A ros prompt like the one above in Step 2 should appear.  At this point, you can issue ros commands.  Try:
+
+You will attach to a running Docker container, and a ros prompt like the one above in Step 2 should appear.  At this point, you can issue ros commands.  Try:
 ```
 rostopic list
 ```
