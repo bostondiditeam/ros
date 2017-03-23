@@ -1,0 +1,24 @@
+ROS creates a network where all the processes are connected. Any node in the system can access this network, interact with other nodes, see the information that they are sending, and transmit data to the network:
+
+
+![Architecture](https://www.safaribooksonline.com/library/view/effective-robotics-programming/9781786463654/graphics/B05576_02_06.jpg)
+
+The basic concepts in this level are nodes, the master, Parameter Server, messages, services, topics, and bags, all of which provide data to the graph in different ways and are explained in the following list:
+
+### Nodes:
+Nodes are processes where computation is done. If you want to have a process that can interact with other nodes, you need to create a node with this process to connect it to the ROS network. Usually, a system will have many nodes to control different functions. You will see that it is better to have many nodes that provide only a single functionality, rather than have a large node that makes everything in the system. > Nodes are written with an ROS client library, for example, roscpp or rospy.
+
+### The master:
+The master provides the registration of names and the lookup service to the rest of the nodes. It also sets up connections between the nodes. If you don't have it in your system, you can't communicate with nodes, services, messages, and others. In a distributed system, you will have the master in one computer, and you can execute nodes in this or other computers.
+
+### Parameter Server:
+Parameter Server gives us the possibility of using keys to store data in a central location. With this parameter, it is possible to configure nodes while it's running or to change the working parameters of a node.
+Messages: Nodes communicate with each other through messages. A message contains data that provides information to other nodes. ROS has many types of messages, and you can also develop your own type of message using standard message types.
+Topics: Each message must have a name to be routed by the ROS network. When a node is sending data, we say that the node is publishing a topic. Nodes can receive topics from other nodes by simply subscribing to the topic. A node can subscribe to a topic even if there aren't any other nodes publishing to this specific topic. This allows us to decouple the production from the consumption. It's important that topic names are unique to avoid problems and confusion between topics with the same name.
+### Services:
+When you publish topics, you are sending data in a many-to-many fashion, but when you need a request or an answer from a node, you can't do it with topics. Services give us the possibility of interacting with nodes. Also, services must have a unique name. When a node has a service, all the nodes can communicate with it, thanks to ROS client libraries.
+### Bags:
+Bags are a format to save and play back the ROS message data. Bags are an important mechanism to store data, such as sensor data, that can be difficult to collect but is necessary to develop and test algorithms. You will use bags a lot while working with complex robots.
+In the following diagram, you can see the graphic representation of this level. It represents a real robot working in real conditions. In the graph, you can see the nodes, the topics, which node is subscribed to a topic, and so on. This graph does not represent messages, bags, Parameter Server, and services. It is necessary for other tools to see a graphic representation of them. 
+
+__Reference: Effective Robotics Programming with ROS - Third Edition from Packt Publications
