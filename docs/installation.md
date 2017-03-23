@@ -4,7 +4,10 @@ Extracted and modified from [Getting started with ROS and Docker](http://wiki.ro
 **Note:** These instructions apply to Mac OS and Linux.  Please modify
 these instructions if your OS requires tweaks.
 
-**Requirements:**  You will need to install Docker first and have it running before proceeding.  Please refer to the
+**Requirements:**
+
+1. If you are running a Linux host, please be sure to use Ubuntu 14.04.
+1. You will need to install Docker first and have it running before proceeding.  Please refer to the
  [Docker install instructions](https://docs.docker.com/engine/installation/) if you have not yet installed it.
 
 ## Step 1: Pull the ROS Docker image
