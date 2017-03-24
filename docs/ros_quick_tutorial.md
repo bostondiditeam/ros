@@ -255,3 +255,173 @@ xmlrpc reply from http://aqy:42235/     time=1.120090ms
 ...
 ```
 
+
+# Sending message over ROS Topic
+**Node can publish a Topic for one or more node subscribe. Topic type is defined by message type publish on it. We can visualize node and topic graph (rosrun rqt_graph rqt_graph), show data published on topic (rostopic echo), check message type (rostopic type), show details of a message (rosmsg show), publish data on a topic (rostopic pub [topic] [msg_type] [args]), report data publish rate (rostopic hz [topic]) and plot the data (rosrun rqt_plot rqt_plot)**
+
+
+```
+#In terminal 1, start master service first
+$ roscore
+
+#In terminal 2, run "turtle_node" node from "turtlesim" package. It pops up a window with a turtle.
+$ rosrun turtlesim turtle_node
+
+#In terminal 3, run "turtle_teleop_key" node from "turtlesim" package. 
+$ rosrun turtlesim turtle_teleop_key
+#Now, when focusing on terminal 3, we can use arrow keys to move the turtle in previous window.
+```
+
+The turtlesim_node and the turtle_teleop_key node are communicating with each other over a ROS Topic. turtle_teleop_key is publishing the key strokes on a topic, while turtlesim_node subscribes to the same topic to receive the key strokes.
+
+
+## Visulize dynamic graph of nodes' communication over Topic (rosrun rqt_graph rqt_graph)
+
+rqt_graph creates a dynamic graph of what's going on in the system. rqt_graph is part of the rqt package. We need to install first and run.
+```
+$ sudo apt-get install ros-indigo-rqt
+$ sudo apt-get install ros-indigo-rqt-common-plugins
+
+#In terminal 4, run "rqt_graph" node. It will pop up a window with a dynamic graph describe nodes and topics relationship
+$ rosrun rqt_graph rqt_graph
+```
+
+## Get topic information (rostopic)
+rostopic provides series commands about topic information.
+
+```
+$ rostopic -h
+rostopic bw     display bandwidth used by topic
+rostopic echo   print messages to screen
+rostopic hz     display publishing rate of topic    
+rostopic list   print information about active topics
+rostopic pub    publish data to topic
+rostopic type   print topic type
+```
+
+## Show data published on a topic to screen (rostopic echo)
+rostopic echo [topic]
+
+```
+#In terminal 5, show data published on topic "/turtle1/cmd_vel"
+$ rostopic echo /turtle1/cmd_vel
+
+#Everytime we press arrow key in terminal 3 (it's running turtle_teleop_key node), data will echo in terminal 5 similar as follows
+linear: 
+  x: 2.0
+  y: 0.0
+  z: 0.0
+angular: 
+  x: 0.0
+  y: 0.0
+  z: 0.0
+```
+
+In the window which pop up from rqt_graph in terminal 4, press the refresh button in the upper-left corner. We can find a new node subscribe topic "turtle1/cmd_vel". That node is created by rostopic echo, thus we can see data shown in terminal 5.
+
+## List all topics currently subscribed to and published (rostopic list -v)
+
+```
+In terminal 6, 
+$ rostopic list -h
+Usage: rostopic list [/topic]
+
+Options:
+  -h, --help            show this help message and exit
+  -b BAGFILE, --bag=BAGFILE
+                        list topics in .bag file
+  -v, --verbose         list full details about each topic
+  -p                    list only publishers
+  -s                    list only subscribers
+
+$ rostopic list -v
+Published topics:
+ * /turtle1/color_sensor [turtlesim/Color] 1 publisher
+ * /turtle1/command_velocity [turtlesim/Velocity] 1 publisher
+ * /rosout [roslib/Log] 2 publishers
+ * /rosout_agg [roslib/Log] 1 publisher
+ * /turtle1/pose [turtlesim/Pose] 1 publisher
+
+Subscribed topics:
+ * /turtle1/command_velocity [turtlesim/Velocity] 1 subscriber
+ * /rosout [roslib/Log] 1 subscriber
+
+```
+
+## Get message type of a topic (rostopic type [topic])
+rostopic type [topic]
+
+```
+$ rostopic type /turtle1/cmd_vel
+geometry_msgs/Twist
+```
+
+## Show details of message type (rosmsg show [message type])
+rosmsg show [message type]
+
+```
+$ rosmsg show geometry_msgs/Twist
+geometry_msgs/Vector3 linear
+  float64 x
+  float64 y
+  float64 z
+geometry_msgs/Vector3 angular
+  float64 x
+  float64 y
+  float64 z
+```
+
+
+## Publish data on a topic (rostopic pub [topic] [msg_type] [args])
+rostopic pub [topic] [msg_type] [args]
+
+
+The following command send a message to turtlesim to move with an linear velocity of 2.0, and an angular velocity of 1.8 .
+```
+#  "-1"  means publish once 
+# "/turtle1/cmd_vel" is topic to be published on
+# "geometry_msgs/Twist" is message type
+# "--" tells none of the following arguments is an option, in cases where arguments have a leading dash -, like negative numbers.
+# '[2.0, 0.0, 0.0]' '[0.0, 0.0, 1.8]' is value input corresponding to what is defined in message type definition
+$ rostopic pub -1 /turtle1/cmd_vel geometry_msgs/Twist -- '[2.0, 0.0, 0.0]' '[0.0, 0.0, 1.8]'
+
+```
+
+We can also publish a steady stream of commands using rostopic pub -r 
+```
+# "-r 1" means publish a steady stream data at 1 Hz
+$ rostopic pub /turtle1/cmd_vel geometry_msgs/Twist -r 1 -- '[2.0, 0.0, 0.0]' '[0.0, 0.0, -1.8]'
+```
+
+We can refresh rqt_graph window which terminal 4 created to see the current node and topic relationship and can find a new node that is corresponding to rostopic pub which steady publish stream of commands.
+
+
+## Get data publish rate (rostopic hz [topic])
+rostopic hz [topic]
+
+```
+$ rostopic hz /turtle1/pose
+subscribed to [/turtle1/pose]
+average rate: 59.354
+        min: 0.005s max: 0.027s std dev: 0.00284s window: 58
+average rate: 59.459
+        min: 0.005s max: 0.027s std dev: 0.00271s window: 118
+...
+```
+
+```
+$ rostopic type /turtle1/cmd_vel | rosmsg show       # for depth information
+```
+
+
+## Show data time series on topic (rosrun rqt_plot rqt_plot)
+$ rosrun rqt_plot rqt_plot
+
+```
+#In terminal 7, type following command will pop up a window.
+$ rosrun rqt_plot rqt_plot
+```
+
+A text box in the upper left corner gives you the ability to add any topic to the plot. Typing a topic e.g. /turtle1/pose/x will highlight the plus button. Press it will add a topic time series plot in the window. You can add other topic e.g. /turtle1/pose/y , /turtle1/pose/theta
+
+
