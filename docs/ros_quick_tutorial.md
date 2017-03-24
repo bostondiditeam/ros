@@ -27,7 +27,7 @@ cmake  msg  package.xml  rosbuild  srv
 ```
 
 ## Creating and building a ROS package
-**Use Catkin, a low-level build system macros and infrastructure for ROS, to create and build ROS package. **
+**Use Catkin, a low-level build system macros and infrastructure for ROS, to create and build ROS package.**
 
 Catkin package requirement :
 * package.xml (it must be catkin compliant, will be discussed later...)
@@ -61,7 +61,7 @@ workspace_folder/        -- WORKSPACE
 ```
 
 
-### create a workspace and initialize it (catkin_make)
+### Create a workspace and initialize it (catkin_make)
 
 $ catkin_make
 
@@ -89,7 +89,7 @@ sudo apt-get install build-essential
 ```
 Once installation completes, re-run the `catkin_make` command.
 
-### create a package (catkin_create_pkg) 
+### Create a package (catkin_create_pkg) 
 
 $ catkin_create_pkg <package_name> [depend1] [depend2] [depend3]
 
@@ -110,7 +110,7 @@ Successfully created files in /home/raymond/catkin_ws/src/beginner_tutorials. Pl
 beginner_tutorials  CMakeLists.txt
 ```
 
-### build a package (catkin_make)
+### Build a package (catkin_make)
 
 $ catkin_make [make_targets] [-DCMAKE_VARIABLES=...]    # (in catkin workspace)
 
@@ -127,7 +127,8 @@ $ catkin_make install  # (optionally)
 Note whenever you build a new package, you should source the generated setup file to update your environment !
 
 
-### Modify package.xml which contains meta information, has been tailored to your package, you can modify maintainer, license, build_depend or run_depend package here.
+### Modify package.xml which contains meta information
+We can modify maintainer, license, build_depend or run_depend package in package.xml.
 
 ```
 ~/catkin_ws$ cd src/beginner_tutorials
