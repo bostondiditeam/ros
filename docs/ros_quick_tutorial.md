@@ -82,6 +82,12 @@ Build space: /home/raymond/catkin_ws/build
 build deval src
 
 ```
+**Note to Mac users:** If you encounter an `Invoking "cmake" failed` error, you may need to install `build-essential` in your ROS environment with the proper compilers.  From your ROS prompt, type the following:
+```
+sudo apt-get update
+sudo apt-get install build-essential
+```
+Once installation completes, re-run the `catkin_make` command.
 
 ### create a package (catkin_create_pkg) 
 
