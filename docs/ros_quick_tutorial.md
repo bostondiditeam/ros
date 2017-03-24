@@ -265,10 +265,10 @@ Note in this chapter, when mentioned "in terminal i", we need create a new termi
 #In terminal 1, start master service first
 $ roscore
 
-#In terminal 2, run "turtlesim_node" node from "turtlesim" package. It pops up a window with a turtle.
+#In terminal 2, run "turtlesim_node" node (default name "turtlesim") from "turtlesim" package. It pops up a window with a turtle.
 $ rosrun turtlesim turtlesim_node
 
-#In terminal 3, run "turtle_teleop_key" node from "turtlesim" package. 
+#In terminal 3, run "turtle_teleop_key" node (default name "teleop_turtle") from "turtlesim" package. 
 $ rosrun turtlesim turtle_teleop_key
 #Now, when focusing on terminal 3, we can use arrow keys to move the turtle in previous window.
 ```
@@ -288,7 +288,10 @@ $ sudo apt-get install ros-indigo-rqt-common-plugins
 #In terminal 4, run "rqt_graph" node. It will pop up a window with a dynamic graph describe nodes and topics relationship
 $ rosrun rqt_graph rqt_graph
 ```
+
 ![rqt1](./images/rqt_graph1.png)
+
+In this graph, we can see **teleop_turtle** is publishing the key strokes on a topic **/turtle1/cmd_vel**, while **turtlesim** subscribes to the same topic to receive the key strokes.
 
 ## Get topic information (rostopic)
 rostopic provides series commands about topic information.
@@ -322,8 +325,8 @@ angular:
 ```
 
 In the window which pop up from rqt_graph in terminal 4, press the refresh button in the upper-left corner. We can find a new node subscribe topic "turtle1/cmd_vel". That node is created by rostopic echo, thus we can see data shown in terminal 5.
-![rqt3](./images/rqt_graph2.png)
 
+![rqt3](./images/rqt_graph2.png)
 
 ## List all topics currently subscribed to and published (rostopic list -v)
 
