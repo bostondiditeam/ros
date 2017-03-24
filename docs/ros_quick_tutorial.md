@@ -273,6 +273,8 @@ $ rosrun turtlesim turtle_teleop_key
 #Now, when focusing on terminal 3, we can use arrow keys to move the turtle in previous window.
 ```
 
+![turtle-and-teleop](./images/turtle_telekey.png)
+
 The turtlesim_node and the turtle_teleop_key node are communicating with each other over a ROS Topic. turtle_teleop_key is publishing the key strokes on a topic, while turtlesim_node subscribes to the same topic to receive the key strokes.
 
 
@@ -286,6 +288,7 @@ $ sudo apt-get install ros-indigo-rqt-common-plugins
 #In terminal 4, run "rqt_graph" node. It will pop up a window with a dynamic graph describe nodes and topics relationship
 $ rosrun rqt_graph rqt_graph
 ```
+![rqt1](./images/rqt_graph1.png)
 
 ## Get topic information (rostopic)
 rostopic provides series commands about topic information.
@@ -319,6 +322,8 @@ angular:
 ```
 
 In the window which pop up from rqt_graph in terminal 4, press the refresh button in the upper-left corner. We can find a new node subscribe topic "turtle1/cmd_vel". That node is created by rostopic echo, thus we can see data shown in terminal 5.
+![rqt3](./images/rqt_graph2.png)
+
 
 ## List all topics currently subscribed to and published (rostopic list -v)
 
@@ -388,6 +393,8 @@ $ rostopic pub -1 /turtle1/cmd_vel geometry_msgs/Twist -- '[2.0, 0.0, 0.0]' '[0.
 
 ```
 
+![turtlemove](./images/turtle_move1.png)
+
 We can also publish a steady stream of commands using rostopic pub -r 
 ```
 # "-r 1" means publish a steady stream data at 1 Hz
@@ -396,6 +403,7 @@ $ rostopic pub /turtle1/cmd_vel geometry_msgs/Twist -r 1 -- '[2.0, 0.0, 0.0]' '[
 
 We can refresh rqt_graph window which terminal 4 created to see the current node and topic relationship and can find a new node that is corresponding to rostopic pub which steady publish stream of commands.
 
+![rqt3](./images/rqt_graph3.png)
 
 ## Get data publish rate (rostopic hz [topic])
 rostopic hz [topic]
@@ -423,6 +431,7 @@ $ rosrun rqt_plot rqt_plot
 $ rosrun rqt_plot rqt_plot
 ```
 
-A text box in the upper left corner gives you the ability to add any topic to the plot. Typing a topic e.g. /turtle1/pose/x will highlight the plus button. Press it will add a topic time series plot in the window. You can add other topic e.g. /turtle1/pose/y , /turtle1/pose/theta
+A text box in the upper left corner gives you the ability to add any topic to the plot. Typing a topic e.g. /turtle1/pose/x will highlight the plus button. Press it will add a topic time series plot in the window. You can add other topic e.g. /turtle1/pose/y
 
+![rqtplot](./images/rqt_plot.png)
 
