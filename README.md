@@ -26,21 +26,21 @@ Click [here](./docs/rosbag.md) for an overview of a ROS bag
 
 **Manifests (package.xml)**: A manifest is a description of a package. It serves to define dependencies between packages and to capture meta information about the package like version, maintainer, license, etc...
 
-### Find package: 
+### Find package (rospack find)
 $ rospack find [package_name]
 ```
 $ rospack find roscpp
 /opt/ros/indigo/share/roscpp
 ```
 
-### Change directory to a package location:
+### Change directory to a package location (roscd)
 $ roscd [locationame[/subdir]]
 ```
 $ roscd roscpp
 /opt/ros/indigo/share/roscpp$
 ```
 
-### List package directory contents
+### List package directory contents (rosls)
 $ rosls
 ```
 /opt/ros/indigo/share/roscpp$ rosls
@@ -82,10 +82,11 @@ workspace_folder/        -- WORKSPACE
 ```
 
 
-### create a workspace (catkin_ws), initialize it with catkin_make
+### create a workspace and initialize it (catkin_make)
 
 $ catkin_make
 
+We create a workspace named 'catkin_ws' with an empty 'src' folder inside and initialize it with catkin_make.
 ```
 $ source /opt/ros/indigo/setup.bash
 $ mkdir -p ~/catkin_ws/src
@@ -103,16 +104,17 @@ build deval src
 
 ```
 
-### create a package called 'beginner_tutorials' which depends on std_msgs, roscpp, and rospy
+### create a package (catkin_create_pkg) 
 
 $ catkin_create_pkg <package_name> [depend1] [depend2] [depend3]
 
+We create a package called 'beginner_tutorials' which depends on std_msgs, roscpp, and rospy.
 ```
 ~/catkin_ws$ cd src
 ~/catkin_ws/src$ ls
 CMakeLists.txt
 
-~/catkin_ws/src$ catkin_create_pkg beginner_tutorials std_msgs rospy roscpp
+~/catkin_ws/src$ catkin_create_pkg beginner_tutorials std_msgs rospy roscpp    
 Created file beginner_tutorials/CMakeLists.txt
 Created file beginner_tutorials/package.xml
 Created folder beginner_tutorials/include/beginner_tutorials
@@ -123,7 +125,7 @@ Successfully created files in /home/raymond/catkin_ws/src/beginner_tutorials. Pl
 beginner_tutorials  CMakeLists.txt
 ```
 
-### build a package
+### build a package (catkin_make)
 
 $ catkin_make [make_targets] [-DCMAKE_VARIABLES=...]    # (in catkin workspace)
 
@@ -137,6 +139,8 @@ $ catkin_make install  # (optionally)
 ~/catkin_ws$ . ~/catkin_ws/devel/setup.bash  #To add the workspace to your ROS environment you need to source the generated setup file
 
 ```
+Note whenever you build a new package, you should source the generated setup file to update your environment !
+
 
 ### Modify package.xml which contains meta information, has been tailored to your package, you can modify maintainer, license, build_depend or run_depend package here.
 
@@ -170,6 +174,101 @@ CMakeLists.txt  include  package.xml  src
 </package>
 
 ```
+
+
+## Running a ROS Node
+**Node is just an excutable file within a ROS package. Here, we initialize "master" service (roscore) to handle nodes communication first and then run a node (rosrun). You may check running nodes (rosnode list), their details (rosnode info) and check if the node is up (rosnode ping)**
+
+
+**Nodes**: an executable file within a ROS package. nodes use a ROS client library to communicate with other nodes. Nodes can publish or subscribe to a Topic. Nodes can also provide or use a Service.
+
+**Client libraries**: allow nodes written in different programming languages to communicate:
+* rospy = python client library
+* roscpp = c++ client library
+
+**Messages**: ROS data type used when subscribing or publishing to a topic.
+
+**Topics**: Nodes can publish messages to a topic as well as subscribe to a topic to receive messages.
+
+**Master**: Name service for ROS (i.e. helps nodes find each other)
+
+**rosout**: ROS equivalent of stdout/stderr
+
+**roscore**: Master + rosout + parameter server (parameter server will be introduced later)
+
+
+### Initialize with creating a ROS master which manage communications between nodes (roscore)
+
+$ roscore
+
+```
+$ roscore
+... 
+auto-starting new master
+process[master]: started with pid [26684]
+ROS_MASTER_URI=http://raymond-VirtualBox:11311/
+
+setting /run_id to 77c7dd08-0fec-11e7-a32b-080027b26b86
+process[rosout-1]: started with pid [26698]
+started core service [/rosout]
+```
+
+### List running ROS node (rosnode list) and check node's information (rosnode info [/node_name])
+
+$ rosnode list
+
+$ rosnode info [/node_name]
+
+We leave the terminal where roscore running, create another terminal and check running node and information via rosnode list and rosnode info.
+```
+# leave the terminal roscore running and create another terminal ...
+$ rosnode list  
+/rosout           # node 'rosout' is always running as it collects and logs nodes' debugging output.
+
+$ rosnode info /rosout
+Node [/rosout]
+Publications:
+ * /rosout_agg [rosgraph_msgs/Log]
+
+Subscriptions:
+ * /rosout [unknown type]
+
+Services:
+ * /rosout/set_logger_level
+ * /rosout/get_loggers
+ 
+contacting node http://machine_name:54614/ ...
+Pid: 5092
+
+```
+
+### Run a ROS node from package (rosrun) and check if node is up (rosnode ping)
+
+$ rosrun [package_name] [node_name]
+
+```
+$ rosrun turtlesim turtlesim_node     # this create a running node "turtlesim_node" with default name "turtlesim" from package "turtlesim" and will pop up a window with a turtle inside
+
+$ rosnode list    # check running nodes, we find turtlesim_node
+/rosout
+/turtlesim
+
+# close the windown and we can give the node user-defined name "my_turtle" as follows
+$ rosrun turtlesim turtlesim_node __name:=my_turtle
+
+$ rosnode list
+/rosout
+/my_turtle
+
+#check if node my_turtle is up
+$ rosnode ping my_turtle  
+rosnode: node is [/my_turtle]
+pinging /my_turtle with a timeout of 3.0s
+xmlrpc reply from http://aqy:42235/     time=1.152992ms
+xmlrpc reply from http://aqy:42235/     time=1.120090ms
+...
+```
+
 
 
 
