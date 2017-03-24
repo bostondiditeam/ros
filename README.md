@@ -15,7 +15,9 @@ For instructions on installing ROS using Docker, please click [here](./docs/inst
 *(Note: competition requires ROS Indigo, which is not compatible with Ubuntu 16.04).*
 
 # ROS bag
-Click [here](./docs/rosbag.md) for an overview of a ROS bag
+Click [here](./docs/rosbag.md) for an overview of a ROS bag.
+
+Click [here](./docs/rosbag_exploration.ipynb) to look at the Jupyter notebook to get started with exploring the rosbag data from Udacity.
 
 # ROS quick tutorial
 
