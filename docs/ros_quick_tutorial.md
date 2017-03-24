@@ -1,32 +1,32 @@
-## Navigating the ROS Filesystem
+# Navigating the ROS Filesystem
 **Explain what is ROS package and manifests,how to find package(rospack find), change directory to a package location (roscd),and list package directory contents (rosls).**
 
 **Packages**: software organization unit of ROS code. Each package can contain libraries, executables, scripts or other artifacts.
 
 **Manifests (package.xml)**: A manifest is a description of a package. It serves to define dependencies between packages and to capture meta information about the package like version, maintainer, license, etc...
 
-### Find package (rospack find)
+## Find package (rospack find)
 $ rospack find [package_name]
 ```
 $ rospack find roscpp
 /opt/ros/indigo/share/roscpp
 ```
 
-### Change directory to a package location (roscd)
+## Change directory to a package location (roscd)
 $ roscd [locationame[/subdir]]
 ```
 $ roscd roscpp
 /opt/ros/indigo/share/roscpp$
 ```
 
-### List package directory contents (rosls)
+## List package directory contents (rosls)
 $ rosls
 ```
 /opt/ros/indigo/share/roscpp$ rosls
 cmake  msg  package.xml  rosbuild  srv
 ```
 
-## Creating and building a ROS package
+# Creating and building a ROS package
 **Use Catkin, a low-level build system macros and infrastructure for ROS, to create and build ROS package.**
 
 Catkin package requirement :
@@ -61,7 +61,7 @@ workspace_folder/        -- WORKSPACE
 ```
 
 
-### Create a workspace and initialize it (catkin_make)
+## Create a workspace and initialize it (catkin_make)
 
 $ catkin_make
 
@@ -89,7 +89,7 @@ sudo apt-get install build-essential
 ```
 Once installation completes, re-run the `catkin_make` command.
 
-### Create a package (catkin_create_pkg) 
+## Create a package (catkin_create_pkg) 
 
 $ catkin_create_pkg <package_name> [depend1] [depend2] [depend3]
 
@@ -110,7 +110,7 @@ Successfully created files in /home/raymond/catkin_ws/src/beginner_tutorials. Pl
 beginner_tutorials  CMakeLists.txt
 ```
 
-### Build a package (catkin_make)
+## Build a package (catkin_make)
 
 $ catkin_make [make_targets] [-DCMAKE_VARIABLES=...]    # (in catkin workspace)
 
@@ -127,7 +127,7 @@ $ catkin_make install  # (optionally)
 Note whenever you build a new package, you should source the generated setup file to update your environment !
 
 
-### Modify package.xml which contains meta information
+## Modify package.xml which contains meta information
 We can modify maintainer, license, build_depend or run_depend package in package.xml.
 
 ```
@@ -162,7 +162,7 @@ CMakeLists.txt  include  package.xml  src
 ```
 
 
-## Running a ROS Node
+# Running a ROS Node
 **Node is just an excutable file within a ROS package. Here, we initialize "master" service (roscore) to handle nodes communication first and then run a node (rosrun). You may check running nodes (rosnode list), their details (rosnode info) and check if the node is up (rosnode ping)**
 
 
@@ -183,7 +183,7 @@ CMakeLists.txt  include  package.xml  src
 **roscore**: Master + rosout + parameter server (parameter server will be introduced later)
 
 
-### Initialize with creating a ROS master which manage communications between nodes (roscore)
+## Initialize with creating a ROS master which manage communications between nodes (roscore)
 
 $ roscore
 
@@ -199,7 +199,7 @@ process[rosout-1]: started with pid [26698]
 started core service [/rosout]
 ```
 
-### List running ROS node (rosnode list) and check node's information (rosnode info [/node_name])
+## List running ROS node (rosnode list) and check node's information (rosnode info [/node_name])
 
 $ rosnode list
 
@@ -228,7 +228,7 @@ Pid: 5092
 
 ```
 
-### Run a ROS node from package (rosrun) and check if node is up (rosnode ping)
+## Run a ROS node from package (rosrun) and check if node is up (rosnode ping)
 
 $ rosrun [package_name] [node_name]
 
