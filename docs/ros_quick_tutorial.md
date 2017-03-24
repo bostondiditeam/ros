@@ -257,7 +257,7 @@ xmlrpc reply from http://aqy:42235/     time=1.120090ms
 
 
 # Sending message over ROS Topic
-**Node can publish a Topic for one or more node subscribe. Topic type is defined by message type publish on it. We can visualize node and topic graph (rosrun rqt_graph rqt_graph), show data published on topic (rostopic echo), check message type (rostopic type), show details of a message (rosmsg show), publish data on a topic (rostopic pub [topic] [msg_type] [args]), report data publish rate (rostopic hz [topic]) and plot the data (rosrun rqt_plot rqt_plot)**
+**Node can publish a topic for one or more node to subscribe. Topic type is defined by message type publish on it. We can visualize node and topic graph (rosrun rqt_graph rqt_graph), show message data published on topic (rostopic echo), check message type (rostopic type), show details of a message (rosmsg show), publish message data on a topic (rostopic pub [topic] [msg_type] [args]), report message data publish rate (rostopic hz [topic]) and plot the message data (rosrun rqt_plot rqt_plot)**
 
 Note in this chapter, when mentioned "in terminal i", we need create a new terminal for the following commands 
 
