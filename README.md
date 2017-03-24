@@ -43,9 +43,13 @@ $ roscd roscpp
 * List package directory contents
 rosls
 ```
-$ rosls
-/opt/ros/indigo/share/roscpp$
+/opt/ros/indigo/share/roscpp$ rosls
+cmake  msg  package.xml  rosbuild  srv
 ```
+
+
+
+
 
 
 
