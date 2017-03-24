@@ -47,7 +47,7 @@ $ rosls
 cmake  msg  package.xml  rosbuild  srv
 ```
 
-## Creating and build a ROS package
+## Creating and building a ROS package
 **Use Catkin, a low-level build system macros and infrastructure for ROS, to create and build ROS package. **
 
 Catkin package requirement :
