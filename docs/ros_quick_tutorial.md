@@ -17,7 +17,15 @@ $ rospack find roscpp
 /opt/ros/indigo/share/roscpp
 ```
 
+## Source rosbash commands for bash
+In order to use roscp, rosls, etc, you need to source them as shown below.
+```
+$ source /opt/ros/indigo/setup.bash
+```
+
 ## Change directory to a package location (roscd)
+
+
 $ roscd [locationame[/subdir]]
 ```
 $ roscd roscpp
