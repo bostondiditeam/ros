@@ -22,3 +22,25 @@ Click [here](./docs/rosbag_exploration.ipynb) to look at the Jupyter notebook to
 # ROS quick tutorial
 Click [here](./docs/ros_quick_tutorial.md) for a quick tutorial of ROS.
 
+1. create the ros workspace in the dir
+```
+$ catkin_make
+```
+2. create two ros package
+```
+$ cd src
+$ catkin_create_pkg detector std_msgs rospy roscpp
+$ catkin_create_pkg tracker std_msgs rospy roscpp
+```
+
+# ROS Nodes
+
+## [detector]
+use this command to run before ros play didi test bag
+```
+$ rosrun detector pipeline.py
+
+```
+
+## [tracker]
+
