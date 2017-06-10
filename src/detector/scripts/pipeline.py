@@ -245,6 +245,9 @@ def sync_callback_for_test(msg1, msg2):
     # subscribe(boxes3d)
 
 if __name__ == '__main__':
+    print("for test")
+    sync_callback_for_test(None, None)
+
     rospy.init_node('test_node')
 
     rospy.Subscriber('/image_raw', Image, image_callback)
