@@ -1,7 +1,19 @@
 #!/usr/bin/env python
 
+import numpy as np
+import sys
+import cv2
+import os
+
+#os.system('roslaunch velodyne_pointcloud 32e_points.launch &')
+sys.path.append(os.path.join(sys.path[0],"../MV3D/src"))
+
+import model as mod
+from data import draw_top_image,draw_box3d_on_top
+from net.utility.draw import imsave ,draw_box3d_on_camera, draw_box3d_on_camera
+from net.processing.boxes3d import boxes3d_decompose
+
 import rospy
-#from beginner_tutorials.msg import *
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import PointCloud2, PointField
@@ -9,13 +21,19 @@ from sensor_msgs.msg import PointCloud2, PointField
 from cv_bridge import CvBridge, CvBridgeError
 import message_filters
 
-import numpy as np
-import sys
-import cv2
+print(sys.version)
+print(sys.path)
+
+print("init the network")
+LIDAR_TOP_SHAPE = (450, 100, 9) # to be decided (400, 400, 8)
+LIDAR_FRONT_SHAPE = (1, 1)  # to be decided.
+RGB_SHAPE = (596, 1368, 3)  # to be decided (1096, 1368, 3)
+
+m3 = mod.MV3D()
+m3.predict_init(LIDAR_TOP_SHAPE, LIDAR_FRONT_SHAPE, RGB_SHAPE)
 
 # Instantiate CvBridge
 bridge = CvBridge()
-camera_image = None
 
 #---------------------------------------------------------------------------------------------------------
 
@@ -179,19 +197,18 @@ def sync_callback(msg1, msg2):
 
     arr = msg_to_arr(msg2)
     lidar = np.array([[item[0], item[1], item[2], item[3]] for item in arr])
-    side_range = (-45., 45.)
-    fwd_range = (-45., 45.)
-    height_range = (-2., 1.)
-    res = 0.1
 
-    camera_image = bridge.imgmsg_to_cv2(msg1, "bgr8")
-    print("camera_image is {}".format(camera_image.shape))
+    try:
+        camera_image = bridge.imgmsg_to_cv2(msg1, "bgr8")
+        print("camera_image is {}".format(camera_image.shape))
+    except CvBridgeError as e:
+        print(e)
 
-    top_view = point_cloud_2_top(lidar, res=res, zres=0.3, side_range=side_range, fwd_range=fwd_range,
-                                 height_range=height_range)
+    top_view = point_cloud_2_top(lidar, res=0.2, zres=0.5, side_range=(-45,45), fwd_range=(-45,45),
+                                 height_range=(-3, 0.5))
     top_image = draw_top_image(top_view[:, :, -1])
 
-    if 1:           # if show the images
+    if 0:           # if show the images
         cemara_show_image = cv2.resize(camera_image,(camera_image.shape[1]//2, camera_image.shape[0]//2))
         top_show_image_width = camera_image.shape[0]//2
         top_show_image = cv2.resize(top_image,(top_show_image_width, top_show_image_width))
@@ -199,9 +216,35 @@ def sync_callback(msg1, msg2):
         cv2.imshow("top", show_image)
         cv2.waitKey(1)
 
-if __name__ == '__main__':
-    print(sys.version)
+    front = np.zeros((1, 1), dtype=np.float32)
+    boxes3d, probs = m3.predict(top_view, front, camera_image)
+    print("predict boxes len=%d"%len(boxes3d))
 
+    #subscribe(boxes3d)
+
+def sync_callback_for_test(msg1, msg2):
+    dir = os.path.join(sys.path[0], "../MV3D/data/preprocessed/didi")
+
+    rgb_path = os.path.join(dir, "rgb", "1/6_f", "00000.png")
+    rgb = cv2.imread(rgb_path)
+    top_path = os.path.join(dir, "top", "1/6_f", "00000.npy")
+    top = np.load(top_path)
+    front = np.zeros((1, 1), dtype=np.float32)
+
+    np_reshape = lambda np_array: np_array.reshape(1, *(np_array.shape))
+    top_view = np_reshape(top)
+    front_view = np_reshape(front)
+    rgb_image = np_reshape(rgb)
+
+    print(top_view.shape)
+    print(front_view.shape)
+    print(rgb_image.shape)
+
+    boxes3d, probs = m3.predict(top_view, front_view, rgb_image)
+    print("predict boxes len=%d" % len(boxes3d))
+    # subscribe(boxes3d)
+
+if __name__ == '__main__':
     rospy.init_node('test_node')
 
     rospy.Subscriber('/image_raw', Image, image_callback)
@@ -214,15 +257,11 @@ if __name__ == '__main__':
     image_raw_sub = message_filters.Subscriber('/image_raw', Image)
     velodyne_points_sub = message_filters.Subscriber('/velodyne_points', PointCloud2)
 
-    ts = message_filters.ApproximateTimeSynchronizer([image_raw_sub, velodyne_points_sub], 10, 0.1)
-    ts.registerCallback(sync_callback)
+    ts = message_filters.ApproximateTimeSynchronizer([image_raw_sub, velodyne_points_sub], 3, 0.03)
+    #ts.registerCallback(sync_callback)
+    ts.registerCallback(sync_callback_for_test)
 
-    #
-    # gpgfix_topic = "/obs1/gps/fix"
-    # rospy.Subscriber(gpgfix_topic, NavSatFix, gpsfix_callback)
-    # # radar_points
-    # radar_points_topic = "/radar/points"
-    # rospy.Subscriber(radar_points_topic, PointCloud2, radar_points_callback)
+    print("init success")
 
     # Spin until ctrl + c
     rospy.spin()
