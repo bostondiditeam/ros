@@ -4,14 +4,10 @@ import numpy as np
 import sys
 import cv2
 import os
+import time
 
 #os.system('roslaunch velodyne_pointcloud 32e_points.launch &')
 sys.path.append(os.path.join(sys.path[0],"../MV3D/src"))
-
-import model as mod
-from data import draw_top_image,draw_box3d_on_top
-from net.utility.draw import imsave ,draw_box3d_on_camera, draw_box3d_on_camera
-from net.processing.boxes3d import boxes3d_decompose
 
 import rospy
 from sensor_msgs.msg import Image
@@ -24,16 +20,19 @@ import message_filters
 print(sys.version)
 print(sys.path)
 
-print("init the network")
-LIDAR_TOP_SHAPE = (450, 100, 9) # to be decided (400, 400, 8)
-LIDAR_FRONT_SHAPE = (1, 1)  # to be decided.
-RGB_SHAPE = (596, 1368, 3)  # to be decided (1096, 1368, 3)
-
-m3 = mod.MV3D()
-m3.predict_init(LIDAR_TOP_SHAPE, LIDAR_FRONT_SHAPE, RGB_SHAPE)
+import xmlrpclib
+rpc=xmlrpclib.ServerProxy('http://localhost:8080/')
 
 # Instantiate CvBridge
 bridge = CvBridge()
+
+# for test data
+dir = os.path.join(sys.path[0], "../MV3D/data/preprocessed/didi")
+rgb_path = os.path.join(dir, "rgb", "1/6_f", "00000.png")
+rgb = cv2.imread(rgb_path)
+top_path = os.path.join(dir, "top", "1/6_f", "00000.npy")
+top = np.load(top_path)
+front = np.zeros((1, 1), dtype=np.float32)
 
 #---------------------------------------------------------------------------------------------------------
 
@@ -190,6 +189,7 @@ def velodyne_points(msg):
 
 def sync_callback(msg1, msg2):
     # msg1: /image_raw   /velodyne_points: velodyne_points
+    func_start = time.time()
     timestamp1 = msg1.header.stamp.to_nsec()
     print('image_callback: msg : seq=%d, timestamp=%19d' % (msg1.header.seq, timestamp1))
     timestamp2 = msg2.header.stamp.to_nsec()
@@ -198,11 +198,8 @@ def sync_callback(msg1, msg2):
     arr = msg_to_arr(msg2)
     lidar = np.array([[item[0], item[1], item[2], item[3]] for item in arr])
 
-    try:
-        camera_image = bridge.imgmsg_to_cv2(msg1, "bgr8")
-        print("camera_image is {}".format(camera_image.shape))
-    except CvBridgeError as e:
-        print(e)
+    camera_image = bridge.imgmsg_to_cv2(msg1, "bgr8")
+    print("camera_image is {}".format(camera_image.shape))
 
     top_view = point_cloud_2_top(lidar, res=0.2, zres=0.5, side_range=(-45,45), fwd_range=(-45,45),
                                  height_range=(-3, 0.5))
@@ -216,53 +213,38 @@ def sync_callback(msg1, msg2):
         cv2.imshow("top", show_image)
         cv2.waitKey(1)
 
-    front = np.zeros((1, 1), dtype=np.float32)
-    boxes3d, probs = m3.predict(top_view, front, camera_image)
-    print("predict boxes len=%d"%len(boxes3d))
-
-    #subscribe(boxes3d)
-
-def sync_callback_for_test(msg1, msg2):
-    dir = os.path.join(sys.path[0], "../MV3D/data/preprocessed/didi")
-
-    rgb_path = os.path.join(dir, "rgb", "1/6_f", "00000.png")
-    rgb = cv2.imread(rgb_path)
-    top_path = os.path.join(dir, "top", "1/6_f", "00000.npy")
-    top = np.load(top_path)
-    front = np.zeros((1, 1), dtype=np.float32)
-
+    # use test data
     np_reshape = lambda np_array: np_array.reshape(1, *(np_array.shape))
     top_view = np_reshape(top)
     front_view = np_reshape(front)
-    rgb_image = np_reshape(rgb)
+    rgb_view = np_reshape(rgb)
 
-    print(top_view.shape)
-    print(front_view.shape)
-    print(rgb_image.shape)
+    np.save(os.path.join(sys.path[0], "../MV3D/data/", "top.npy"), top_view)
+    np.save(os.path.join(sys.path[0], "../MV3D/data/", "rgb.npy"), rgb_view)
 
-    boxes3d, probs = m3.predict(top_view, front_view, rgb_image)
-    print("predict boxes len=%d" % len(boxes3d))
-    # subscribe(boxes3d)
+    start = time.time()
+    boxes3d = rpc.predict()
+    end = time.time()
+    print("predict boxes len={} use predict time: {} seconds.".format(len(boxes3d), end-start))
+
+    # subscribe(boxes3d) to tracker_node
 
 if __name__ == '__main__':
-    print("for test")
-    sync_callback_for_test(None, None)
+    #print("for test")
+    #sync_callback_for_test(None, None)
+    rospy.init_node('detect_node')
 
-    rospy.init_node('test_node')
-
-    rospy.Subscriber('/image_raw', Image, image_callback)
-    rospy.Subscriber('/velodyne_points', PointCloud2, velodyne_points)
-    rospy.Subscriber('/objects/capture_vehicle/front/gps/fix', NavSatFix, gpsfix_front_callback)
-    rospy.Subscriber('/objects/capture_vehicle/rear/gps/fix', NavSatFix, gpsfix_rear_callback)
-    rospy.Subscriber('/radar/points', PointCloud2, radar_points_callback)
-
+    # rospy.Subscriber('/image_raw', Image, image_callback)
+    # rospy.Subscriber('/velodyne_points', PointCloud2, velodyne_points)
+    # rospy.Subscriber('/objects/capture_vehicle/front/gps/fix', NavSatFix, gpsfix_front_callback)
+    # rospy.Subscriber('/objects/capture_vehicle/rear/gps/fix', NavSatFix, gpsfix_rear_callback)
+    # rospy.Subscriber('/radar/points', PointCloud2, radar_points_callback)
 
     image_raw_sub = message_filters.Subscriber('/image_raw', Image)
     velodyne_points_sub = message_filters.Subscriber('/velodyne_points', PointCloud2)
 
     ts = message_filters.ApproximateTimeSynchronizer([image_raw_sub, velodyne_points_sub], 3, 0.03)
-    #ts.registerCallback(sync_callback)
-    ts.registerCallback(sync_callback_for_test)
+    ts.registerCallback(sync_callback)
 
     print("init success")
 
