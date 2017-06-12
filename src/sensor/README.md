@@ -3,7 +3,7 @@ sudo apt-get install ros-indigo-velodyne
 
 
 ## demo 
-'''
+```
 cd didi-data/car/testing
 rosbag play ford01.bag -l
 
@@ -13,11 +13,11 @@ cd ros/
 catkin_make
 
 rosrun sensor_fusion image_pointcloud_sync
-'''
+```
 
 open a new terminal
-'''
+```
 rviz
-'''
+```
 
 
