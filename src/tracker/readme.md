@@ -9,6 +9,8 @@
 * Hungarian and Kalman updates are called every time we have a new bounding box message
 * Hungarian algorithm is responsible for calling Kalman filter updates and separate targets into individual tracks.
 
+![alt text](TrackerMessageTiming.png "Message Timings Illustration")
+
 # Instructions
 
 * Copy the entire `src` folder to your catkin workspace. For example,

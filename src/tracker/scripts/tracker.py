@@ -12,11 +12,18 @@ class Tracker:
         self.latestframetime = 0
         self.trans = [None]*3
 
+    def save_gen_tracklet(self): #, timestamp, bbox):
+        print 'Save and Generate tracklet.xml'
+        #########################################################
+        #TODO: save for tracklet generation at the end of rosplay
+        #########################################################
+
     def kalman_update(self, trans, trackid):
         print 'Kalman update #', trackid
         #########################################################
         #TODO: Kalman filter measurement update for single target
         #########################################################
+        self.save_gen_tracklet()
 
     def hungarian_update(self, translist):
         print 'Hungarian update'
