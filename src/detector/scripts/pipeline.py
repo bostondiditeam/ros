@@ -28,17 +28,20 @@ bridge = CvBridge()
 
 # for test data
 dir = os.path.join(sys.path[0], "../MV3D/data/preprocessed/didi")
-rgb_path = os.path.join(dir, "rgb", "1/6_f", "00000.png")
-rgb = cv2.imread(rgb_path)
-top_path = os.path.join(dir, "top", "1/6_f", "00000.npy")
-top = np.load(top_path)
+# rgb_path = os.path.join(dir, "rgb", "1/6_f", "00000.png")
+# rgb = cv2.imread(rgb_path)
+# top_path = os.path.join(dir, "top", "1/6_f", "00000.npy")
+# top = np.load(top_path)
 front = np.zeros((1, 1), dtype=np.float32)
 
 #---------------------------------------------------------------------------------------------------------
 
 # PointCloud2 to array
 # 		https://gist.github.com/dlaz/11435820
-#       https://github.com/pirobot/ros-by-example/blob/master/rbx_vol_1/rbx1_apps/src/point_cloud2.py
+#       https://github.com/pirobot/ros-by-example/b# rgb_path = os.path.join(dir, "rgb", "1/6_f", "00000.png")
+# rgb = cv2.imread(rgb_path)
+# top_path = os.path.join(dir, "top", "1/6_f", "00000.npy")
+# top = np.load(top_path)lob/master/rbx_vol_1/rbx1_apps/src/point_cloud2.py
 #       http://answers.ros.org/question/202787/using-pointcloud2-data-getting-xy-points-in-python/
 #       https://github.com/eric-wieser/ros_numpy/blob/master/src/ros_numpy/point_cloud2.py
 
@@ -154,6 +157,50 @@ def fields_to_dtype(fields, point_step):
     return np_dtype_list
 
 
+# -------------------------------------------------------
+def boxes3d_decompose(boxes3d):
+
+    # translation
+    if 1: #cfg.DATA_SETS_TYPE == 'didi':
+        T_x = np.sum(boxes3d[:, 0:8, 0], 1) / 8.0
+        T_y = np.sum(boxes3d[:, 0:8, 1], 1) / 8.0
+        T_z = np.sum(boxes3d[:, 0:8, 2], 1) / 8.0
+    else: # if cfg.DATA_SETS_TYPE == 'KITTI':
+        T_x = np.sum(boxes3d[:, 0:4, 0], 1) / 4.0
+        T_y = np.sum(boxes3d[:, 0:4, 1], 1) / 4.0
+        T_z = np.sum(boxes3d[:, 0:4, 2], 1) / 4.0
+
+    Points0 = boxes3d[:, 0, 0:2]
+    Points1 = boxes3d[:, 1, 0:2]
+    Points2 = boxes3d[:, 2, 0:2]
+
+    dis1=np.sum((Points0-Points1)**2,1)**0.5
+    dis2=np.sum((Points1-Points2)**2,1)**0.5
+
+    dis1_is_max=dis1>dis2
+
+    #length width heigth
+    L=np.maximum(dis1,dis2)
+    W=np.minimum(dis1,dis2)
+    H=np.sum((boxes3d[:,0,0:3]-boxes3d[:,4,0:3])**2,1)**0.5
+
+    # rotation
+    yaw=lambda p1,p2,dis: math.atan2(p2[1]-p1[1],p2[0]-p1[0])
+    R_x = np.zeros(len(boxes3d))
+    R_y = np.zeros(len(boxes3d))
+    R_z = [yaw(Points0[i],Points1[i],dis1[i]) if is_max else  yaw(Points1[i],Points2[i],dis2[i])
+           for is_max,i in zip(dis1_is_max,range(len(dis1_is_max)))]
+    R_z=np.array(R_z)
+
+    translation = np.c_[T_x,T_y,T_z]
+    size = np.c_[H,W,L]
+    rotation= np.c_[R_x,R_y,R_z]
+    return translation,size,rotation
+
+
+# -------------------------------------------------------
+
+
 def msg_to_arr(msg):
 
     dtype_list = fields_to_dtype(msg.fields, msg.point_step)
@@ -224,8 +271,12 @@ def sync_callback(msg1, msg2):
 
     start = time.time()
     boxes3d = rpc.predict()
+    translation,size,rotation = boxes3d_decompose(boxes3d)
     end = time.time()
     print("predict boxes len={} use predict time: {} seconds.".format(len(boxes3d), end-start))
+    for i in range(len(boxes3d)):
+        print i, ": ", translation,size,rotation
+
 
     # subscribe(boxes3d) to tracker_node
 
