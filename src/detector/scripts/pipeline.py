@@ -11,6 +11,7 @@ sys.path.append(os.path.join(sys.path[0],"../MV3D/src"))
 
 from Tracklet_saver import *
 tracklet_lasttimestamp = -1
+tracklet_generated = False
 
 import rospy
 from sensor_msgs.msg import Image
@@ -220,7 +221,11 @@ def trackframe(timestamp1, timestamp2, boxes3d, lastframe=False):
 def write_final_tracklet_xml():
 
     global tracklet_saver
-    tracklet_saver.write_tracklet()
+    global tracklet_generated
+
+    if (not tracklet_generated):
+        tracklet_saver.write_tracklet()
+        tracklet_generated = True
 
 # -------------------------------------------------------
 
