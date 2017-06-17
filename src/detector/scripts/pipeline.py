@@ -9,6 +9,9 @@ import time
 #os.system('roslaunch velodyne_pointcloud 32e_points.launch &')
 sys.path.append(os.path.join(sys.path[0],"../MV3D/src"))
 
+from Tracklet_saver import *
+tracklet_lasttimestamp = -1
+
 import rospy
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import NavSatFix
@@ -198,6 +201,27 @@ def boxes3d_decompose(boxes3d):
     return translation,size,rotation
 
 
+tracklet_saver = Tracklet_saver('./test_output/')
+def trackframe(timestamp1, timestamp2, boxes3d, lastframe=False):
+
+    ###################################################
+    # TODO: add multi-target tracking algorithm here.
+    ###################################################
+
+    global tracklet_saver
+    translation, size, rotation = boxes3d_decompose(boxes3d)
+
+    ## Temp: pass-through without tracking
+    tracklet_saver.add_tracklet(i, size, transition, rotation)
+
+    if (lastframe):
+        write_final_tracklet_xml()
+
+def write_final_tracklet_xml():
+
+    global tracklet_saver
+    tracklet_saver.write_tracklet()
+
 # -------------------------------------------------------
 
 
@@ -271,11 +295,19 @@ def sync_callback(msg1, msg2):
 
     start = time.time()
     boxes3d = rpc.predict()
-    translation,size,rotation = boxes3d_decompose(boxes3d)
     end = time.time()
     print("predict boxes len={} use predict time: {} seconds.".format(len(boxes3d), end-start))
-    for i in range(len(boxes3d)):
-        print i, ": ", translation,size,rotation
+
+    #for i in range(len(boxes3d)):
+    #    print i, ": ", translation,size,rotation
+    ########################################
+    global tracklet_lasttimestamp
+    if (timestamp1<tracklet_lasttimestamp): # rosbag loops
+        write_final_tracklet_xml()
+    else:
+        trackframe(timestamp1, timestamp2, boxes3d)
+        tracklet_lasttimestamp = timestamp1
+    ########################################
 
 
     # subscribe(boxes3d) to tracker_node
