@@ -79,8 +79,12 @@ class Tracker:
 
     def handle_bbox_msg(self,msg):
         if (not self.tracklet_generated) and (len(msg.markers)>0):
-            #self.tracklet_lasttimestamp = msg.markers[0].header.stamp.to_nsec()
-            #print 'bbox time  ', self.tracklet_lasttimestamp, ', Total bbox in this frame = ', len(msg.markers)
+            self.tracklet_lasttimestamp = msg.markers[0].header.stamp.to_nsec()
+            print 'bbox time  ', self.tracklet_lasttimestamp, ', Total bbox in this frame = ', len(msg.markers)
+            m = msg.markers[0]
+            print 'tx,ty,tz:', m.pose.position.x, m.pose.position.y, m.pose.position.z
+            print 'w,l,h:', m.scale.x, m.scale.y, m.scale.z
+            print 'rx,ry,rz:', m.pose.orientation.x, m.pose.orientation.y, m.pose.orientation.z
             self.hungarian_update(msg.markers)
 
 

@@ -21,9 +21,6 @@ from visualization_msgs.msg import Marker,MarkerArray
 from cv_bridge import CvBridge, CvBridgeError
 import message_filters
 
-print(sys.version)
-print(sys.path)
-
 import xmlrpclib
 rpc=xmlrpclib.ServerProxy('http://localhost:8080/')
 
@@ -217,7 +214,7 @@ def sync_callback(msg1, msg2):
         cv2.imshow("top", show_image)
         cv2.waitKey(1)
 
-    # use test data
+    # use test data until round2 pipeline is ok
     np_reshape = lambda np_array: np_array.reshape(1, *(np_array.shape))
     top_view = np_reshape(top)
     front_view = np_reshape(front)
@@ -250,8 +247,6 @@ def sync_callback(msg1, msg2):
     pub.publish(markerArray)
 
 if __name__ == '__main__':
-    #print("for test")
-    #sync_callback_for_test(None, None)
     rospy.init_node('detect_node')
     pub = rospy.Publisher("bbox", MarkerArray, queue_size=1)
 
@@ -267,7 +262,7 @@ if __name__ == '__main__':
     ts = message_filters.ApproximateTimeSynchronizer([image_raw_sub, velodyne_points_sub], 3, 0.03)
     ts.registerCallback(sync_callback)
 
-    print("init success")
+    print("detecter node initialzed")
 
     # Spin until ctrl + c
     rospy.spin()

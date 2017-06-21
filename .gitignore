@@ -13,6 +13,7 @@
 *.slo
 *.lo
 *.obj
+*.pyc
 
 # CMAKE TEMPORARY FILES
 CMakeCache.txt
