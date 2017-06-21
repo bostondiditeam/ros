@@ -13,6 +13,7 @@ import mv3d
 import math
 from net.processing.boxes3d import boxes3d_decompose
 from data import Preprocess
+from util import *
 
 print("init the network")
 LIDAR_TOP_SHAPE = (500, 300, 15) # to be decided (400, 400, 8)
@@ -32,13 +33,16 @@ print(rgb.shape)
 lidar_path = os.path.join(dir, "velodyne_points/data", "1492888603962510690.bin")
 lidar =np.fromfile(lidar_path, np.float32)
 lidar = lidar.reshape((-1, 4))
-top = process.lidar_to_top(lidar)
+top = g_lidar_to_top(lidar)
 front = np.zeros((0, ), dtype=np.float32)
 
 np_reshape = lambda np_array: np_array.reshape(1, *(np_array.shape))
 top = np_reshape(top)
 front = np_reshape(front)
 rgb = np_reshape(rgb)
+print("test top shape: {}".format(top.shape))
+print("test fromt shape: {}".format(front.shape))
+print("test rgb shape: {}".format(rgb.shape))
 
 start = time.time()
 boxes3d, probs = predict(top, front, rgb)
