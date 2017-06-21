@@ -33,10 +33,11 @@ print("save npy use time={} seconds".format(end-start))
 
 start = time.time()
 boxes3d = rpc.predict()
-translation, size, rotation = boxes3d_decompose(np.array(boxes3d))
 end = time.time()
 
-print("predict boxes len={} use time={} seconds".format(len(boxes3d),end-start))
-print("test translation: {}".format(translation))
-print("test size: {}".format(size))
-print("test rotation: {}".format(rotation))
+if len(boxes3d):
+    translation, size, rotation = boxes3d_decompose(np.array(boxes3d))
+    print("predict boxes len={} use time={} seconds".format(len(boxes3d),end-start))
+    print("test translation: {}".format(translation))
+    print("test size: {}".format(size))
+    print("test rotation: {}".format(rotation))

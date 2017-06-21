@@ -225,26 +225,30 @@ def sync_callback(msg1, msg2):
 
     start = time.time()
     boxes3d = rpc.predict()
-    translation, size, rotation = boxes3d_decompose(np.array(boxes3d))
     end = time.time()
     print("predict boxes len={} use predict time: {} seconds.".format(len(boxes3d), end-start))
 
-    # publish (boxes3d) to tracker_node
-    markerArray = MarkerArray()
-    for i in range(len(boxes3d)):
-        m = Marker()
-        m.type = Marker.CUBE
-        m.header.frame_id = "velodyne"
-        m.header.stamp = msg2.header.stamp
-        m.scale.x, m.scale.y, m.scale.z = size[i][0],size[i][1],size[i][2]
-        m.pose.position.x, m.pose.position.y, m.pose.position.z = \
-            translation[i][0], translation[i][1], translation[i][2]
-        m.pose.orientation.x, m.pose.orientation.y, m.pose.orientation.z, m.pose.orientation.w = \
-            rotation[i][0], rotation[i][1], rotation[i][2], 0.
-        m.color.a, m.color.r, m.color.g, m.color.b = \
-            1.0, 0.0, 1.0, 0.0
-        markerArray.markers.append(m)
-    pub.publish(markerArray)
+    if len(boxes3d) > 0:
+        translation, size, rotation = boxes3d_decompose(np.array(boxes3d))
+        # publish (boxes3d) to tracker_node
+        markerArray = MarkerArray()
+        for i in range(len(boxes3d)):
+            m = Marker()
+            m.type = Marker.CUBE
+            m.header.frame_id = "velodyne"
+            m.header.stamp = msg2.header.stamp
+            m.scale.x, m.scale.y, m.scale.z = size[i][0],size[i][1],size[i][2]
+            m.pose.position.x, m.pose.position.y, m.pose.position.z = \
+                translation[i][0], translation[i][1], translation[i][2]
+            m.pose.orientation.x, m.pose.orientation.y, m.pose.orientation.z, m.pose.orientation.w = \
+                rotation[i][0], rotation[i][1], rotation[i][2], 0.
+            m.color.a, m.color.r, m.color.g, m.color.b = \
+                1.0, 0.0, 1.0, 0.0
+            markerArray.markers.append(m)
+        pub.publish(markerArray)
+
+    func_end = time.time()
+    print("sync_callback use {} seconds".format(func_end - func_start))
 
 if __name__ == '__main__':
     rospy.init_node('detect_node')
