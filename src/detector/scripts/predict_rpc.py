@@ -10,8 +10,7 @@ import time
 sys.path.append(os.path.join(sys.path[0],"../MV3D/src"))
 
 import model as mod
-from data import draw_top_image,draw_box3d_on_top
-from net.utility.draw import imsave ,draw_box3d_on_camera, draw_box3d_on_camera
+import math
 from net.processing.boxes3d import boxes3d_decompose
 
 print("init the network")
@@ -38,6 +37,10 @@ rgb = np_reshape(rgb)
 
 boxes3d, probs = m3.predict(top, front, rgb)
 print("predict boxes len=%d" % len(boxes3d))
+translation, size, rotation = boxes3d_decompose(boxes3d)
+print("test translation: {}".format(translation))
+print("test size: {}".format(size))
+print("test rotation: {}".format(rotation))
 
 class MioServer(xmlrpc.XMLRPC):
     """

@@ -5,14 +5,18 @@ import sys
 import cv2
 import os
 import time
+import math
 
 #os.system('roslaunch velodyne_pointcloud 32e_points.launch &')
 sys.path.append(os.path.join(sys.path[0],"../MV3D/src"))
+from net.processing.boxes3d import boxes3d_decompose
 
 import rospy
+import math
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import PointCloud2, PointField
+from visualization_msgs.msg import Marker,MarkerArray
 # ROS Image message -> OpenCV2 image converter
 from cv_bridge import CvBridge, CvBridgeError
 import message_filters
@@ -33,6 +37,7 @@ rgb = cv2.imread(rgb_path)
 top_path = os.path.join(dir, "top", "1/6_f", "00000.npy")
 top = np.load(top_path)
 front = np.zeros((1, 1), dtype=np.float32)
+pub = None
 
 #---------------------------------------------------------------------------------------------------------
 
@@ -153,7 +158,6 @@ def fields_to_dtype(fields, point_step):
 
     return np_dtype_list
 
-
 def msg_to_arr(msg):
 
     dtype_list = fields_to_dtype(msg.fields, msg.point_step)
@@ -188,7 +192,7 @@ def velodyne_points(msg):
     print("Receive velodyne_points message seq=%d, timestamp=%19d" % (msg.header.seq, msg.header.stamp.to_nsec()))
 
 def sync_callback(msg1, msg2):
-    # msg1: /image_raw   /velodyne_points: velodyne_points
+    # msg1: /image_raw   # msg2: /velodyne_points: velodyne_points
     func_start = time.time()
     timestamp1 = msg1.header.stamp.to_nsec()
     print('image_callback: msg : seq=%d, timestamp=%19d' % (msg1.header.seq, timestamp1))
@@ -224,15 +228,32 @@ def sync_callback(msg1, msg2):
 
     start = time.time()
     boxes3d = rpc.predict()
+    translation, size, rotation = boxes3d_decompose(np.array(boxes3d))
     end = time.time()
     print("predict boxes len={} use predict time: {} seconds.".format(len(boxes3d), end-start))
 
-    # subscribe(boxes3d) to tracker_node
+    # publish (boxes3d) to tracker_node
+    markerArray = MarkerArray()
+    for i in range(len(boxes3d)):
+        m = Marker()
+        m.type = Marker.CUBE
+        m.header.frame_id = "velodyne"
+        m.header.stamp = msg2.header.stamp
+        m.scale.x, m.scale.y, m.scale.z = size[i][0],size[i][1],size[i][2]
+        m.pose.position.x, m.pose.position.y, m.pose.position.z = \
+            translation[i][0], translation[i][1], translation[i][2]
+        m.pose.orientation.x, m.pose.orientation.y, m.pose.orientation.z, m.pose.orientation.w = \
+            rotation[i][0], rotation[i][1], rotation[i][2], 0.
+        m.color.a, m.color.r, m.color.g, m.color.b = \
+            1.0, 0.0, 1.0, 0.0
+        markerArray.markers.append(m)
+    pub.publish(markerArray)
 
 if __name__ == '__main__':
     #print("for test")
     #sync_callback_for_test(None, None)
     rospy.init_node('detect_node')
+    pub = rospy.Publisher("bbox", MarkerArray, queue_size=1)
 
     # rospy.Subscriber('/image_raw', Image, image_callback)
     # rospy.Subscriber('/velodyne_points', PointCloud2, velodyne_points)

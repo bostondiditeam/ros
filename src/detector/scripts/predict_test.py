@@ -5,6 +5,11 @@ import sys
 import time
 
 import xmlrpclib
+import math
+
+sys.path.append(os.path.join(sys.path[0],"../MV3D/src"))
+from net.processing.boxes3d import boxes3d_decompose
+
 rpc=xmlrpclib.ServerProxy('http://localhost:8080/')
 
 dir = os.path.join(sys.path[0], "../MV3D/data/preprocessed/didi")
@@ -27,6 +32,11 @@ end = time.time()
 print("save npy use time={} seconds".format(end-start))
 
 start = time.time()
-boxes3d  = rpc.predict()
+boxes3d = rpc.predict()
+translation, size, rotation = boxes3d_decompose(np.array(boxes3d))
 end = time.time()
+
 print("predict boxes len={} use time={} seconds".format(len(boxes3d),end-start))
+print("test translation: {}".format(translation))
+print("test size: {}".format(size))
+print("test rotation: {}".format(rotation))
