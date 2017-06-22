@@ -363,8 +363,8 @@ class Sort(object):
         for trk in reversed(self.trackers):
             d = trk.get_state()[0]
             d_attr = trk.unused_box_attrs
-            print('printing d_attr')
-            print(d_attr)
+            # print('printing d_attr')
+            # print(d_attr)
             if((trk.time_since_update < 1) and (trk.hit_streak >= self.min_hits or self.frame_count <= self.min_hits)):
                 # +1 as MOT benchmark requires positive
                 ret.append(np.concatenate((d, [trk.id + 1])).reshape(1, -1))
@@ -379,13 +379,13 @@ class Sort(object):
             tracked_detections = np.concatenate(ret)[:,:-1]
             tracked_attrs = np.array(ret_attrs)
             # print('output shape')
-            print(tracked_detections.shape, tracked_attrs.shape)
-            print(np.concatenate((tracked_detections,tracked_attrs),axis=1).shape)
+            # print(tracked_detections.shape, tracked_attrs.shape)
+            # print(np.concatenate((tracked_detections,tracked_attrs),axis=1).shape)
             return np.concatenate((tracked_detections, tracked_attrs),axis=1), np.concatenate(ret)[:,-1]
         return np.empty((0, 5)), np.empty((0, 1))
 
     def split_detections(self, detections):
-        dets = detections[:,:5]
+        dets = detections[:, :5]
         dets = np.insert(dets, 5, 0., axis=1)
         attrs = detections[:, 5:]
         return dets, attrs
