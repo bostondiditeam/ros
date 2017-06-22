@@ -121,10 +121,11 @@ def sync_callback(msg1, msg2):
     camera_image = bridge.imgmsg_to_cv2(msg1, "bgr8")
     print("camera_image is {}".format(camera_image.shape))
 
-    dir = os.path.join(sys.path[0], "/ext2/round2_data/output/suburu_driving_past_it/suburu07")
-    rgb_path = os.path.join(dir, "image_02/data", "1492888603962510690.png")
     rgb = crop_image(camera_image)
+    lidar_to_top_start = time.time()
     top = g_lidar_to_top(lidar)
+    lidar_to_top_end = time.time()
+    print("lidar_to_top use {} seconds".format(lidar_to_top_end-lidar_to_top_start))
 
     if 0:           # if show the images
         top_image = draw_top_image(top)
