@@ -13,10 +13,13 @@ from generate_tracklet import *
 import os
 import sys
 
+from datetime import datetime
+
 class Tracklet_saver():
     def __init__(self, dir_path):
         # check if the tracklet file already exist, if yes, exit and print error message.
-        file_path = os.path.join(dir_path, 'tracklet_labels_pred.xml')
+        file_path = os.path.join(dir_path, 'tracklet_labels_pred_tracker_{}.xml'.format(datetime.now().strftime('%Y%m%d-%H%M%S')
+))
         if os.path.isfile(file_path):
             sys.stderr.write("Error: The tracklet file %s already exists, change file name before prediction.\n" % file_path)
             exit(-1)
@@ -42,6 +45,7 @@ class Tracklet_saver():
             self.collection.tracklets.append(obs_tracklet)
 
     def write_tracklet(self):
+        print('writing tracklet: {}'.format(self.path))
         self.collection.write_xml(self.path)
 
 
