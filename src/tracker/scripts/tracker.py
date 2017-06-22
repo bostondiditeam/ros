@@ -3,9 +3,12 @@
 import rospy
 import numpy as np
 import tf
-from visualization_msgs.msg import Marker,MarkerArray
+from visualization_msgs.msg import Marker, MarkerArray
 from sensor_msgs.msg import PointCloud2, Image
 from Tracklet_saver import *
+
+import multi_object_tracker as mot
+import time
 
 class Tracker:
 
@@ -16,6 +19,14 @@ class Tracker:
         self.tracklet_lasttimestamp = -1
         self.tracklet_generated = False
         self.cameraframeindex = -1
+
+        # initialize Kalman Tracker
+        self.mot_tracker = mot.Sort(min_hits=3, max_age=10,
+                            distance_threshold=.03)
+        self.num_updates = 0
+        self.tracked_targets = [] #defaultdict(partial(deque, maxlen=5))
+        self.total_time = 0
+
 
     def write_final_tracklet_xml(self):
         if (not self.tracklet_generated):
@@ -28,14 +39,15 @@ class Tracker:
         #print 'Save tracklet'
         self.tracklet_saver.add_tracklet(frameid, scale, trans, rot)
 
-    def kalman_update(self, frameid, trackid, scale, trans, rot):
+    def kalman_update(self, frameid, scale, trans, rot):
         #print 'Kalman update #', trackid
         #########################################################
         #TODO: Kalman filter measurement update for single target
         #########################################################
         self.save_gen_tracklet(frameid, scale, trans, rot)
 
-    def hungarian_update(self, markerarry):
+    def _hungarian_update_(self, markerarry):
+        """This function is not used and is legacy code. preserved for reference"""
         #print 'Hungarian update'
         trackindex = 0
         bboxtime = markerarry[-1].header.stamp.to_nsec() # use last entry as time reference (should be the same for all)
@@ -64,6 +76,53 @@ class Tracker:
 
             self.tracklet_lasttimestamp = bboxtime
 
+    def tracker_update(self, detections):
+        """Performs Kalman Filter update and maintains track on obstacles.
+
+        Args:
+            detections (:obj:`numpy.array`) : an array of detected bounding
+                boxes. Each row correspond to a detection of the form
+                `[tx, ty, w, l, rz, tz, h, rx, ry]`. The order of attributes
+                (columns) should be strictly followed.
+
+        Note:
+            The order of columns corresponding to bounding box attributes
+            is important because same order is followed while extracting
+            columns in kalman filter update method. Reason for altering
+            (mangling) the column order is to make it easier to slice the
+            numpy array of detections into a subset that is used by kalman
+            filter `[tx, ty, w, l, rz]`, and one that is not used by
+            Kalman Filter `[tz, h, rx, ry]`. The second slice does not
+            play any role in Kalman Filter update, merely passed through
+            to enable publishing tracked obstacle, and writing xml.
+
+        """
+        start_time = time.time()
+        self.tracked_targets, self.tracked_ids = self.mot_tracker.update(detections)
+
+        # the kalman filter returns numpy array in the form:
+        # self.tracked_targets shape = [n_detections, box_dim]
+        # and each row = [tx, ty, w, l, rz, tz, h, rx, ry]
+
+        cycle_time = time.time() - start_time
+        self.total_time += cycle_time
+        self.num_updates += 1.
+
+        print('kalman update')
+        for i in range(self.tracked_targets.shape[0]):
+            tx, ty, w, l, rz, tz, h, rx, ry = self.tracked_targets[i,:]
+            # print(tx, ty, w, l, rz, tz, h, rx, ry)
+            scale = np.asarray([w, l, h])
+            trans = np.asarray([tx, ty, tz])
+            rot = np.asarray([rx, ry, rz])
+
+            # self.kalman_update(self.cameraframeindex, scale, trans, rot)
+            self.save_gen_tracklet(self.cameraframeindex, scale, trans, rot)
+
+        print("tracking {} objects at time {}, processing time {}, avg processing time {}"
+              .format(len(self.tracked_targets), self.current_time,
+                      cycle_time, self.total_time/self.num_updates))
+
     def handle_image_msg(self, msg):
         self.cameraframeindex += 1
 
@@ -85,7 +144,45 @@ class Tracker:
             print 'tx,ty,tz:', m.pose.position.x, m.pose.position.y, m.pose.position.z
             print 'w,l,h:', m.scale.x, m.scale.y, m.scale.z
             print 'rx,ry,rz:', m.pose.orientation.x, m.pose.orientation.y, m.pose.orientation.z
-            self.hungarian_update(msg.markers)
+
+            self.tracklet_lasttimestamp = msg.markers[-1].header.stamp.to_nsec()
+            print('time {}'.format(self.tracklet_lasttimestamp))
+
+            bboxes = self._marker_to_boxes(msg.markers)
+            # self.hungarian_update(np.asarray(bboxes))
+            print('bounding boxes')
+            print(np.asarray(bboxes))
+            self.tracker_update(np.asarray(bboxes))
+
+    def _marker_to_boxes(self, markers):
+        """Convert MarkerArray to bounding boxes.
+
+        Args:
+            msg (:obj:`rospy.msg`)
+        """
+        bboxtime = markers[-1].header.stamp.to_nsec() # use last entry as time reference (should be the same for all)
+        bboxes = []
+        for m in markers:
+
+            trans = m.pose.position
+            scale = m.scale
+
+            tx, ty, tz = trans.x, trans.y, trans.z
+            w, l, h = scale.x, scale.y, scale.z
+            rx, ry, rz = tf.transformations.euler_from_quaternion(
+                [m.pose.orientation.x,
+                 m.pose.orientation.y,
+                 m.pose.orientation.z,
+                 m.pose.orientation.w])
+
+            if m.header.stamp.to_nsec() == bboxtime:
+
+                print('bbox {}, ',m.id, ' time = ', m.header.stamp, ': Pos = [',tx,',',ty,',',tz,']')
+
+                bboxtime = m.header.stamp
+                bboxes.append([tx, ty, w, l, rz, tz, h, rx, ry])
+
+        return bboxes
 
 
     def startlistening(self):
