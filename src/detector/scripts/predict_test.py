@@ -19,16 +19,15 @@ lidar_path = os.path.join(dir, "velodyne_points/data", "1492888603962510690.bin"
 lidar =np.fromfile(lidar_path, np.float32)
 lidar = lidar.reshape((-1, 4))
 top = g_lidar_to_top(lidar)
-front = np.zeros((0, ), dtype=np.float32)
 
-np_reshape = lambda np_array: np_array.reshape(1, *(np_array.shape))
-top_view = np_reshape(top)
-front_view = np_reshape(front)
-rgb_view = np_reshape(rgb)
+if 0: # test top is ok?
+    top_image = draw_top_image(top)
+    cv2.imshow("top", top_image)
+    cv2.waitKey(10000)
 
 start = time.time()
-np.save(os.path.join(sys.path[0], "../MV3D/data/", "top.npy"), top_view)
-np.save(os.path.join(sys.path[0], "../MV3D/data/", "rgb.npy"), rgb_view)
+np.save(os.path.join(sys.path[0], "../MV3D/data/", "top.npy"), top)
+np.save(os.path.join(sys.path[0], "../MV3D/data/", "rgb.npy"), rgb)
 end = time.time()
 print("save npy use time={} seconds".format(end-start))
 

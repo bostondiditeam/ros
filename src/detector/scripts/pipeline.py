@@ -31,12 +31,6 @@ bridge = CvBridge()
 front = np.zeros((1, 1), dtype=np.float32)
 pub = None
 
-#---------------------------------------------------------------------------------------------------------
-def draw_top_image(top):
-    top_binary = np.zeros_like(top)
-    top_binary[top > 0] = 128
-    return np.dstack((top_binary, top_binary, top_binary)).astype(np.uint8)
-
 # https://github.com/eric-wieser/ros_numpy #############################################################################################
 
 DUMMY_FIELD_PREFIX = '__'
@@ -131,9 +125,9 @@ def sync_callback(msg1, msg2):
     rgb_path = os.path.join(dir, "image_02/data", "1492888603962510690.png")
     rgb = crop_image(camera_image)
     top = g_lidar_to_top(lidar)
-    top_image = draw_top_image(top[:, :, -1])
 
     if 0:           # if show the images
+        top_image = draw_top_image(top)
         cemara_show_image = cv2.resize(camera_image,(camera_image.shape[1]//2, camera_image.shape[0]//2))
         top_show_image_width = camera_image.shape[0]//2
         top_show_image = cv2.resize(top_image,(top_show_image_width, top_show_image_width))
@@ -141,14 +135,8 @@ def sync_callback(msg1, msg2):
         cv2.imshow("top", show_image)
         cv2.waitKey(1)
 
-    # use test data until round2 pipeline is ok
-    np_reshape = lambda np_array: np_array.reshape(1, *(np_array.shape))
-    top_view = np_reshape(top)
-    front_view = np_reshape(front)
-    rgb_view = np_reshape(rgb)
-
-    np.save(os.path.join(sys.path[0], "../MV3D/data/", "top.npy"), top_view)
-    np.save(os.path.join(sys.path[0], "../MV3D/data/", "rgb.npy"), rgb_view)
+    np.save(os.path.join(sys.path[0], "../MV3D/data/", "top.npy"), top)
+    np.save(os.path.join(sys.path[0], "../MV3D/data/", "rgb.npy"), rgb)
 
     start = time.time()
     boxes3d = rpc.predict()
@@ -175,7 +163,7 @@ def sync_callback(msg1, msg2):
             markerArray.markers.append(m)
         pub.publish(markerArray)
     func_end = time.time()
-    print("sync_callback use {} seconds".format(func_end-func_start))
+    print("sync_callback use {} seconds".format(func_end - func_start))
 
 if __name__ == '__main__':
     rospy.init_node('detect_node')
