@@ -37,27 +37,6 @@ from functools import partial
 import warnings
 
 
-@jit
-def iou(bb_test_, bb_gt_):
-    """
-    Computes IUO between two bboxes in the form [x,y,w,h]
-
-    """
-    bb_test = convert_bbox_center_to_corners(
-        bb_test_)  # convert to [x1,y1,w,h] to [x1,y1,x2,y2]
-    bb_gt = convert_bbox_center_to_corners(bb_gt_)
-
-    xx1 = np.maximum(bb_test[0], bb_gt[0])
-    yy1 = np.maximum(bb_test[1], bb_gt[1])
-    xx2 = np.minimum(bb_test[2], bb_gt[2])
-    yy2 = np.minimum(bb_test[3], bb_gt[3])
-    w = np.maximum(0., xx2 - xx1)
-    h = np.maximum(0., yy2 - yy1)
-    wh = w * h
-    o = wh / ((bb_test[2] - bb_test[0]) * (bb_test[3] - bb_test[1])
-              + (bb_gt[2] - bb_gt[0]) * (bb_gt[3] - bb_gt[1]) - wh)
-    return(o)
-
 
 @jit
 def squared_diff(a, b):
@@ -68,18 +47,18 @@ def squared_diff(a, b):
 def euclidean(bb_test_, bb_gt_):
     """
     Computes similarity using euclidean distance between
-    two bboxes in the form [x, y, s, r, yaw]
+    two bboxes in the form [x, y, z, s, r, yaw]
     using  1/ (1 + euclidean_dist)
 
     """
-    x1, y1, s1, r1, yaw1 = get_bbox(bb_test_)
-    x2, y2, s2, r2, yaw2 = get_bbox(bb_gt_)
+    x1, y1, z1, s1, r1, yaw1 = get_bbox(bb_test_)
+    x2, y2, z2, s2, r2, yaw2 = get_bbox(bb_gt_)
 
     # o = (np.sum(squared_diff(i,j) for (i,j) in [(x1, x2), (y1, y2), (yaw1, yaw2)]))
     # this is not jit compatible. resort to using for loop:
 
     output = 0.
-    for (i, j) in [(x1, x2), (y1, y2), (yaw1, yaw2), (s1, s2), (r1, r2)]:
+    for (i, j) in [(x1, x2), (y1, y2), (z1, z2), (yaw1, yaw2), (s1, s2), (r1, r2)]:
         output += squared_diff(i, j)
     output = 1./(1. + (output ** (1 / 2.)))
     # print('distance {}'.format(o))
@@ -98,26 +77,17 @@ def distance(bb_test_, bb_gt_):
     return o
 
 
-def convert_bbox_center_to_corners(bbox):
-    """[x,y,h,w, yaw[,score]] --> [x1,y1, x2, y2"""
-    # warnings.warn(str(len(bbox)))
-    if len(bbox) > 5:
-        x, y, h, w, yaw, score = bbox
-    else:
-        x, y, h, w, yaw = bbox
-    return [x - w / 2., y - h / 2, x + w / 2., y + h / 2.]
-
 
 @jit
 def get_bbox(bbox):
     """Drop score from bbox (if any, last index)
     [x,y,h,w, yaw[,score]] --> [x1,y1, x2, y2"""
     # warnings.warn(str(len(bbox)))
-    if len(bbox) > 5:
-        x, y, h, w, yaw, score = bbox
+    if len(bbox) > 6:
+        x, y, z, h, w, yaw, score = bbox
     else:
-        x, y, h, w, yaw = bbox
-    return [x, y, h, w, yaw]
+        x, y, z, h, w, yaw = bbox
+    return [x, y, z, h, w, yaw]
 
 
 def convert_bbox_to_z(bbox):
@@ -127,32 +97,33 @@ def convert_bbox_to_z(bbox):
       the aspect ratio
 
 
-      [x,y,w,h,yaw] -> [x,y,s,r,yaw]
+      [x,y,z, w,h,yaw] -> [x,y,z,s,r,yaw]
 
     """
-    w = bbox[2]
-    h = bbox[3]
+    w = bbox[3]
+    h = bbox[4]
     x = bbox[0]
     y = bbox[1]
+    z = bbox[2]
     s = w * h  # scale is just area
     r = w / float(h)
     # return np.array([x, y, s, r]).reshape((4, 1))
-    yaw = bbox[4]
-    return np.array([x, y, s, r, yaw]).reshape((5, 1))
+    yaw = bbox[5]
+    return np.array([x, y, z, s, r, yaw]).reshape((6, 1))
 
 
 def convert_x_to_bbox(x, score=None):
     """
-    Takes a bounding box in the centre form [x,y,s,r, yaw] and returns it in the form
-      [x, y, w, h, yaw] where x, y is the center
+    Takes a bounding box in the centre form [x,y, z, s,r, yaw] and returns it in the form
+      [x, y, z, w, h, yaw] where x, y, z is the center
     """
-    w = np.sqrt(x[2] * x[3])
-    h = x[2] / w
-    yaw = x[4]
+    w = np.sqrt(x[3] * x[4])
+    h = x[3] / w
+    yaw = x[5]
     if(score is None):
-        return np.array([x[0], x[1], w, h, yaw]).reshape((1, 5))
+        return np.array([x[0], x[1], x[2], w, h, yaw]).reshape((1, 6))
     else:
-        return np.array([x[0], x[1], w, h, yaw, score]).reshape((1, 6))
+        return np.array([x[0], x[1], x[2], w, h, yaw, score]).reshape((1, 7))
 
 
 class KalmanBoxTracker(object):
@@ -168,35 +139,37 @@ class KalmanBoxTracker(object):
         # define constant velocity model
         # originalx : [u, v, s, r, |dot{u}, \dot{v}, \dot{s}]
         # adding \yaw, \dot{\yaw}
-        # new x: [u, v, s, r, \yaw, |dot{u}, \dot{v}, \dot{s}, \dot{\yaw}]
+        # new x: [u, v, z, s, r, \yaw, |dot{u}, \dot{v}, \dot{s}, \dot{\yaw}]
         # assume r constant
         # dim_x : length of x vector
-        # dim_z: numer of sensors measurements [x, y, s, r, yaw]
-        self.kf = KalmanFilter(dim_x=9, dim_z=5)
-        self.kf.F = np.array([[1, 0, 0, 0, 0, 1, 0, 0, 0],
-                              [0, 1, 0, 0, 0, 0, 1, 0, 0],
-                              [0, 0, 1, 0, 0, 0, 0, 1, 0],
-                              [0, 0, 0, 1, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 1, 0, 0, 0, 1],
-                              [0, 0, 0, 0, 0, 1, 0, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 1, 0, 0],
-                              [0, 0, 0, 0, 0, 0, 0, 1, 0],
-                              [0, 0, 0, 0, 0, 0, 0, 0, 1]])
+        # dim_z: numer of sensors measurements [x, y, z, s, r, yaw]
+        self.kf = KalmanFilter(dim_x=10, dim_z=6)
+        self.kf.F = np.array([[1, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+                              [0, 1, 0, 0, 0, 0, 0, 1, 0, 0],
+                              [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 1, 0, 0, 0, 0, 1, 0],
+                              [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                              [0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 1]])
 
         # dim H: (dim_z, dim_x)
-        self.kf.H = np.array([[1, 0, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 1, 0, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 1, 0, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 1, 0, 0, 0, 0, 0],
-                              [0, 0, 0, 0, 1, 0, 0, 0, 0]])
+        self.kf.H = np.array([[1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+                              [0, 0, 0, 0, 0, 1, 0, 0, 0, 0]])
 
-        self.kf.R[2:, 2:] *= 10.
-        self.kf.P[5:, 5:] *= 1000.  # give high uncertainty to the unobservable initial velocities
+        self.kf.R[3:, 3:] *= 10.
+        self.kf.P[6:, 6:] *= 1000.  # give high uncertainty to the unobservable initial velocities
         self.kf.P *= 10.
         self.kf.Q[-1, -1] *= 0.01
-        self.kf.Q[5:, 5:] *= 0.01
+        self.kf.Q[6:, 6:] *= 0.01
 
-        self.kf.x[:5] = convert_bbox_to_z(bbox)
+        self.kf.x[:6] = convert_bbox_to_z(bbox)
         self.time_since_update = 0
         self.id = KalmanBoxTracker.count
         KalmanBoxTracker.count += 1
@@ -223,8 +196,8 @@ class KalmanBoxTracker(object):
         """
         Advances the state vector and returns the predicted bounding box estimate.
         """
-        if((self.kf.x[7] + self.kf.x[2]) <= 0):
-            self.kf.x[7] *= 0.0
+        if((self.kf.x[8] + self.kf.x[3]) <= 0):
+            self.kf.x[8] *= 0.0
         self.kf.predict()
         self.age += 1
         if(self.time_since_update > 0):
@@ -250,15 +223,15 @@ def associate_detections_to_trackers(
     """
     if(len(trackers) == 0):
         return np.empty((0, 2), dtype=int), np.arange(
-            len(detections)), np.empty((0, 5), dtype=int)
+            len(detections)), np.empty((0, 6), dtype=int)
     distance_matrix = np.zeros(
         (len(detections), len(trackers)), dtype=np.float32)
 
     for d, det in enumerate(detections):
         for t, trk in enumerate(trackers):
             distance_matrix[d, t] = distance(det, trk)
-            # print('distance of new det:{} to tracker {} = {}'.format(
-            #     d, t, distance_matrix[d, t]))
+            print('distance of new det:{} to tracker {} = {}'.format(
+                d, t, distance_matrix[d, t]))
 
     # warnings.warn(str(distance_matrix))
     # warnings.warn('tracking')
@@ -305,9 +278,11 @@ class Sort(object):
     def update(self, detections):
         """
         Params:
-            dets (:obj:`numpy.array`) : a numpy array of detections
-                in the format [[x,y,w,h, yaw, score],
-                                [x,y,w,h, yaw,score],...]
+            Args:
+                dets (:obj:`numpy.array`) : an array of detected bounding
+                    boxes. Each row correspond to a detection of the form
+                    `[tx, ty,  tz, w, l, rz, h, rx, ry]`. The order of attributes
+                    (columns) should be strictly followed.
 
         Requires: this method must be called once for each frame even with empty detections.
         Returns the a similar array, where the last column is the object ID.
@@ -316,7 +291,7 @@ class Sort(object):
         """
         self.frame_count += 1
         # get predicted locations from existing trackers.
-        trks = np.zeros((len(self.trackers), 6))
+        trks = np.zeros((len(self.trackers), 7))
 
         to_del = []
         ret = []
@@ -324,7 +299,7 @@ class Sort(object):
         # print('trks', trks)
         for t, trk in enumerate(trks):
             pos = self.trackers[t].predict()[0]
-            trk[:] = [pos[0], pos[1], pos[2], pos[3], pos[4], 0]
+            trk[:] = [pos[0], pos[1], pos[2], pos[3], pos[4], pos[5], 0]
             if(np.any(np.isnan(pos))):
                 to_del.append(t)
                 # warnings.warn('popping trackers {}'.format(t))
@@ -357,14 +332,14 @@ class Sort(object):
         # create and initialise new trackers for unmatched detections
         # print(dets.shape)
         for i in unmatched_dets:
-            trk = KalmanBoxTracker(dets[i, :5], attrs[i, :])
+            trk = KalmanBoxTracker(dets[i, :6], attrs[i, :])
             self.trackers.append(trk)
         i = len(self.trackers)
         for trk in reversed(self.trackers):
             d = trk.get_state()[0]
             d_attr = trk.unused_box_attrs
-            print('printing d_attr')
-            print(d_attr)
+            # print('printing d_attr')
+            # print(d_attr)
             if((trk.time_since_update < 1) and (trk.hit_streak >= self.min_hits or self.frame_count <= self.min_hits)):
                 # +1 as MOT benchmark requires positive
                 ret.append(np.concatenate((d, [trk.id + 1])).reshape(1, -1))
@@ -379,16 +354,38 @@ class Sort(object):
             tracked_detections = np.concatenate(ret)[:,:-1]
             tracked_attrs = np.array(ret_attrs)
             # print('output shape')
-            print(tracked_detections.shape, tracked_attrs.shape)
-            print(np.concatenate((tracked_detections,tracked_attrs),axis=1).shape)
+            # print(tracked_detections.shape, tracked_attrs.shape)
+            # print(np.concatenate((tracked_detections,tracked_attrs),axis=1).shape)
             return np.concatenate((tracked_detections, tracked_attrs),axis=1), np.concatenate(ret)[:,-1]
-        return np.empty((0, 5)), np.empty((0, 1))
+        return np.empty((0, 6)), np.empty((0, 1))
 
     def split_detections(self, detections):
-        dets = detections[:,:5]
-        dets = np.insert(dets, 5, 0., axis=1)
-        attrs = detections[:, 5:]
-        return dets, attrs
+        """Splits detections to two numpy arrays.
+
+        Args:
+            detections (:obj:`numpy.array`) : an array of detected bounding
+                boxes. Each row correspond to a detection of the form
+                `[tx, ty,  tz, w, l, rz, h, rx, ry]`. The order of attributes
+                (columns) should be strictly followed.
+
+        Note:
+            The order of columns corresponding to bounding box attributes
+            is important because same order is followed while extracting
+            columns in kalman filter update method. Reason for altering
+            (mangling) the column order is to make it easier to slice the
+            numpy array of detections into a subset that is used by kalman
+            filter `[tx, ty, tz, w, l, rz]`, and one that is not used by
+            Kalman Filter `[h, rx, ry]`. The second slice does not
+            play any role in Kalman Filter update, merely passed through
+            to enable publishing tracked obstacle, and writing xml.
+        """
+        if detections.size > 0:
+            dets = detections[:, :6]
+            dets = np.insert(dets, 6, 0., axis=1)
+            attrs = detections[:, 6:]
+            return dets, attrs
+        else:
+            return [], []
 
 
 if __name__ == '__main__':

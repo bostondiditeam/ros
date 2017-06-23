@@ -21,8 +21,9 @@ class Tracker:
         self.cameraframeindex = -1
 
         # initialize Kalman Tracker
-        self.mot_tracker = mot.Sort(min_hits=3, max_age=10,
-                            distance_threshold=.03)
+        #default params (min_hits=3, max_hist=10, distance_threshold=.03)
+        self.mot_tracker = mot.Sort(min_hits=5, max_age=15,
+                                    distance_threshold=.06)
         self.num_updates = 0
         self.tracked_targets = [] #defaultdict(partial(deque, maxlen=5))
         self.total_time = 0
@@ -82,7 +83,7 @@ class Tracker:
         Args:
             detections (:obj:`numpy.array`) : an array of detected bounding
                 boxes. Each row correspond to a detection of the form
-                `[tx, ty, w, l, rz, tz, h, rx, ry]`. The order of attributes
+                `[tx, ty,  tz, w, l, rz, h, rx, ry]`. The order of attributes
                 (columns) should be strictly followed.
 
         Note:
@@ -91,8 +92,8 @@ class Tracker:
             columns in kalman filter update method. Reason for altering
             (mangling) the column order is to make it easier to slice the
             numpy array of detections into a subset that is used by kalman
-            filter `[tx, ty, w, l, rz]`, and one that is not used by
-            Kalman Filter `[tz, h, rx, ry]`. The second slice does not
+            filter `[tx, ty, tz, w, l, rz]`, and one that is not used by
+            Kalman Filter `[h, rx, ry]`. The second slice does not
             play any role in Kalman Filter update, merely passed through
             to enable publishing tracked obstacle, and writing xml.
 
@@ -110,7 +111,7 @@ class Tracker:
 
         print('kalman update')
         for i in range(self.tracked_targets.shape[0]):
-            tx, ty, w, l, rz, tz, h, rx, ry = self.tracked_targets[i,:]
+            tx, ty, tz, w, l, rz,  h, rx, ry = self.tracked_targets[i,:]
             # print(tx, ty, w, l, rz, tz, h, rx, ry)
             scale = np.asarray([w, l, h])
             trans = np.asarray([tx, ty, tz])
@@ -138,21 +139,23 @@ class Tracker:
 
     def handle_bbox_msg(self,msg):
         if (not self.tracklet_generated) and (len(msg.markers)>0):
-            self.tracklet_lasttimestamp = msg.markers[0].header.stamp.to_nsec()
-            print 'bbox time  ', self.tracklet_lasttimestamp, ', Total bbox in this frame = ', len(msg.markers)
+
+            print('time0', 'time1')
+            print(msg.markers[0].header.stamp.to_nsec())
+            print(msg.markers[-1].header.stamp.to_nsec())
+            # self.tracklet_lasttimestamp = msg.markers[-1].header.stamp.to_nsec()
+            # print 'bbox time  ', self.tracklet_lasttimestamp, ', Total bbox in this frame = ', len(msg.markers)
             m = msg.markers[0]
             print 'tx,ty,tz:', m.pose.position.x, m.pose.position.y, m.pose.position.z
             print 'w,l,h:', m.scale.x, m.scale.y, m.scale.z
             print 'rx,ry,rz:', m.pose.orientation.x, m.pose.orientation.y, m.pose.orientation.z
-
-            self.tracklet_lasttimestamp = msg.markers[-1].header.stamp.to_nsec()
-            print('time {}'.format(self.tracklet_lasttimestamp))
 
             bboxes = self._marker_to_boxes(msg.markers)
             # self.hungarian_update(np.asarray(bboxes))
             print('bounding boxes')
             print(np.asarray(bboxes))
             self.tracker_update(np.asarray(bboxes))
+            self.tracklet_lasttimestamp = msg.markers[-1].header.stamp.to_nsec()
 
     def _marker_to_boxes(self, markers):
         """Convert MarkerArray to bounding boxes.
@@ -162,6 +165,7 @@ class Tracker:
         """
         bboxtime = markers[-1].header.stamp.to_nsec() # use last entry as time reference (should be the same for all)
         bboxes = []
+
         for m in markers:
 
             trans = m.pose.position
@@ -175,12 +179,11 @@ class Tracker:
                  m.pose.orientation.z,
                  m.pose.orientation.w])
 
-            if m.header.stamp.to_nsec() == bboxtime:
-
-                print('bbox {}, ',m.id, ' time = ', m.header.stamp, ': Pos = [',tx,',',ty,',',tz,']')
-
-                bboxtime = m.header.stamp
-                bboxes.append([tx, ty, w, l, rz, tz, h, rx, ry])
+            # if m.header.stamp.to_nsec() == bboxtime:
+            if (m.header.stamp.to_nsec() > self.tracklet_lasttimestamp):
+                print('bbox {}, time={}, Pos = [{},{},{}]'.format(m.id,  m.header.stamp, tx,ty,tz))
+                # bboxtime = m.header.stamp
+                bboxes.append([tx, ty, tz, w, l, rz, h, rx, ry])
 
         return bboxes
 
