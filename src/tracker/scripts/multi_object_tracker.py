@@ -37,27 +37,6 @@ from functools import partial
 import warnings
 
 
-@jit
-def iou(bb_test_, bb_gt_):
-    """
-    Computes IUO between two bboxes in the form [x,y,w,h]
-
-    """
-    bb_test = convert_bbox_center_to_corners(
-        bb_test_)  # convert to [x1,y1,w,h] to [x1,y1,x2,y2]
-    bb_gt = convert_bbox_center_to_corners(bb_gt_)
-
-    xx1 = np.maximum(bb_test[0], bb_gt[0])
-    yy1 = np.maximum(bb_test[1], bb_gt[1])
-    xx2 = np.minimum(bb_test[2], bb_gt[2])
-    yy2 = np.minimum(bb_test[3], bb_gt[3])
-    w = np.maximum(0., xx2 - xx1)
-    h = np.maximum(0., yy2 - yy1)
-    wh = w * h
-    o = wh / ((bb_test[2] - bb_test[0]) * (bb_test[3] - bb_test[1])
-              + (bb_gt[2] - bb_gt[0]) * (bb_gt[3] - bb_gt[1]) - wh)
-    return(o)
-
 
 @jit
 def squared_diff(a, b):
@@ -97,15 +76,6 @@ def distance(bb_test_, bb_gt_):
         o = euclidean(bb_test_, bb_gt_)
     return o
 
-
-def convert_bbox_center_to_corners(bbox):
-    """[x,y,h,w, yaw[,score]] --> [x1,y1, x2, y2"""
-    # warnings.warn(str(len(bbox)))
-    if len(bbox) > 5:
-        x, y, h, w, yaw, score = bbox
-    else:
-        x, y, h, w, yaw = bbox
-    return [x - w / 2., y - h / 2, x + w / 2., y + h / 2.]
 
 
 @jit
@@ -409,10 +379,13 @@ class Sort(object):
             play any role in Kalman Filter update, merely passed through
             to enable publishing tracked obstacle, and writing xml.
         """
-        dets = detections[:, :6]
-        dets = np.insert(dets, 6, 0., axis=1)
-        attrs = detections[:, 6:]
-        return dets, attrs
+        if detections.size > 0:
+            dets = detections[:, :6]
+            dets = np.insert(dets, 6, 0., axis=1)
+            attrs = detections[:, 6:]
+            return dets, attrs
+        else:
+            return [], []
 
 
 if __name__ == '__main__':
