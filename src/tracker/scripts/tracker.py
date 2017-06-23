@@ -82,7 +82,7 @@ class Tracker:
         Args:
             detections (:obj:`numpy.array`) : an array of detected bounding
                 boxes. Each row correspond to a detection of the form
-                `[tx, ty, w, l, rz, tz, h, rx, ry]`. The order of attributes
+                `[tx, ty,  tz, w, l, rz, h, rx, ry]`. The order of attributes
                 (columns) should be strictly followed.
 
         Note:
@@ -91,8 +91,8 @@ class Tracker:
             columns in kalman filter update method. Reason for altering
             (mangling) the column order is to make it easier to slice the
             numpy array of detections into a subset that is used by kalman
-            filter `[tx, ty, w, l, rz]`, and one that is not used by
-            Kalman Filter `[tz, h, rx, ry]`. The second slice does not
+            filter `[tx, ty, tz, w, l, rz]`, and one that is not used by
+            Kalman Filter `[h, rx, ry]`. The second slice does not
             play any role in Kalman Filter update, merely passed through
             to enable publishing tracked obstacle, and writing xml.
 
@@ -110,7 +110,7 @@ class Tracker:
 
         print('kalman update')
         for i in range(self.tracked_targets.shape[0]):
-            tx, ty, w, l, rz, tz, h, rx, ry = self.tracked_targets[i,:]
+            tx, ty, tz, w, l, rz,  h, rx, ry = self.tracked_targets[i,:]
             # print(tx, ty, w, l, rz, tz, h, rx, ry)
             scale = np.asarray([w, l, h])
             trans = np.asarray([tx, ty, tz])
@@ -175,12 +175,11 @@ class Tracker:
                  m.pose.orientation.z,
                  m.pose.orientation.w])
 
-            if m.header.stamp.to_nsec() == bboxtime:
-
-                print('bbox {}, ',m.id, ' time = ', m.header.stamp, ': Pos = [',tx,',',ty,',',tz,']')
-
-                bboxtime = m.header.stamp
-                bboxes.append([tx, ty, w, l, rz, tz, h, rx, ry])
+            # if m.header.stamp.to_nsec() == bboxtime:
+            if (m.header.stamp.to_nsec() > self.tracklet_lasttimestamp):
+                print('bbox {}, time={}, Pos = [{},{},{}]'.format(m.id,  m.header.stamp, tx,ty,tz))
+                # bboxtime = m.header.stamp
+                bboxes.append([tx, ty, tz, w, l, rz, h, rx, ry])
 
         return bboxes
 
