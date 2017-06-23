@@ -21,8 +21,9 @@ class Tracker:
         self.cameraframeindex = -1
 
         # initialize Kalman Tracker
-        self.mot_tracker = mot.Sort(min_hits=3, max_age=10,
-                            distance_threshold=.03)
+        #default params (min_hits=3, max_hist=10, distance_threshold=.03)
+        self.mot_tracker = mot.Sort(min_hits=5, max_age=15,
+                                    distance_threshold=.06)
         self.num_updates = 0
         self.tracked_targets = [] #defaultdict(partial(deque, maxlen=5))
         self.total_time = 0
@@ -138,21 +139,23 @@ class Tracker:
 
     def handle_bbox_msg(self,msg):
         if (not self.tracklet_generated) and (len(msg.markers)>0):
-            self.tracklet_lasttimestamp = msg.markers[0].header.stamp.to_nsec()
-            print 'bbox time  ', self.tracklet_lasttimestamp, ', Total bbox in this frame = ', len(msg.markers)
+
+            print('time0', 'time1')
+            print(msg.markers[0].header.stamp.to_nsec())
+            print(msg.markers[-1].header.stamp.to_nsec())
+            # self.tracklet_lasttimestamp = msg.markers[-1].header.stamp.to_nsec()
+            # print 'bbox time  ', self.tracklet_lasttimestamp, ', Total bbox in this frame = ', len(msg.markers)
             m = msg.markers[0]
             print 'tx,ty,tz:', m.pose.position.x, m.pose.position.y, m.pose.position.z
             print 'w,l,h:', m.scale.x, m.scale.y, m.scale.z
             print 'rx,ry,rz:', m.pose.orientation.x, m.pose.orientation.y, m.pose.orientation.z
-
-            self.tracklet_lasttimestamp = msg.markers[-1].header.stamp.to_nsec()
-            print('time {}'.format(self.tracklet_lasttimestamp))
 
             bboxes = self._marker_to_boxes(msg.markers)
             # self.hungarian_update(np.asarray(bboxes))
             print('bounding boxes')
             print(np.asarray(bboxes))
             self.tracker_update(np.asarray(bboxes))
+            self.tracklet_lasttimestamp = msg.markers[-1].header.stamp.to_nsec()
 
     def _marker_to_boxes(self, markers):
         """Convert MarkerArray to bounding boxes.
@@ -162,6 +165,7 @@ class Tracker:
         """
         bboxtime = markers[-1].header.stamp.to_nsec() # use last entry as time reference (should be the same for all)
         bboxes = []
+
         for m in markers:
 
             trans = m.pose.position
