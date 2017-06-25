@@ -83,6 +83,46 @@ def g_lidar_to_top(lidar):
             top = liufeng_lidar_to_top(lidar)
     return top
 
+def clidar_to_top(lidar):
+    if (cfg.DATA_SETS_TYPE == 'didi' or cfg.DATA_SETS_TYPE == 'test'):
+        lidar=filter_center_car(lidar)
+
+    # Calculate map size and pack parameters for top view and front view map (DON'T CHANGE THIS !)
+    Xn = int(math.floor((TOP_X_MAX - TOP_X_MIN) / TOP_X_DIVISION))
+    Yn = int(math.floor((TOP_Y_MAX - TOP_Y_MIN) / TOP_Y_DIVISION))
+    Zn = int(math.floor((TOP_Z_MAX - TOP_Z_MIN) / TOP_Z_DIVISION))
+
+    top_flip = np.ones((Xn, Yn, Zn + 2), dtype=np.double)  # DON'T CHpyANGE THIS !
+    num = lidar.shape[0]  # DON'T CHANGE THIS !
+
+    # call the C function to create top view maps
+    # The np array indata will be edited by createTopViewMaps to populate it with the 8 top view maps
+    SharedLib.createTopMaps(ctypes.c_void_p(lidar.ctypes.data),
+                            ctypes.c_int(num),
+                            ctypes.c_void_p(top_flip.ctypes.data),
+                            ctypes.c_float(TOP_X_MIN), ctypes.c_float(TOP_X_MAX),
+                            ctypes.c_float(TOP_Y_MIN), ctypes.c_float(TOP_Y_MAX),
+                            ctypes.c_float(TOP_Z_MIN), ctypes.c_float(TOP_Z_MAX),
+                            ctypes.c_float(TOP_X_DIVISION), ctypes.c_float(TOP_Y_DIVISION),
+                            ctypes.c_float(TOP_Z_DIVISION),
+                            ctypes.c_int(Xn), ctypes.c_int(Yn), ctypes.c_int(Zn)
+                            )
+    top = np.flipud(np.fliplr(top_flip))
+    return top
+
+    # top = np.ones((height, width, channel), dtype=np.double)
+    # SharedLib.createTopViewMaps(ctypes.c_void_p(top.ctypes.data),
+    #                             ctypes.c_char_p(b_lidar_data_src_path),
+    #                             ctypes.c_float(TOP_X_MIN), ctypes.c_float(TOP_X_MAX),
+    #                             ctypes.c_float(TOP_Y_MIN), ctypes.c_float(TOP_Z_MAX),
+    #                             ctypes.c_float(TOP_Z_MIN), ctypes.c_float(TOP_Z_MAX),
+    #                             ctypes.c_float(TOP_X_DIVISION), ctypes.c_float(TOP_Y_DIVISION),
+    #                             ctypes.c_float(TOP_Z_DIVISION),
+    #                             ctypes.c_int(Xn), ctypes.c_int(Yn), ctypes.c_int(Zn))
+    #
+    # # flip image to match the original preprocess module result (data.py)
+    # top = np.flipud(np.fliplr(top))
+
 ## lidar to top ##
 @autojit
 def lidar_to_top(lidar):
@@ -170,52 +210,12 @@ def lidar_to_top(lidar):
     #     top_image=top_image.astype(dtype=np.uint8)
     return top
 
-def clidar_to_top(lidar):
-    if (cfg.DATA_SETS_TYPE == 'didi' or cfg.DATA_SETS_TYPE == 'test'):
-        lidar=filter_center_car(lidar)
-
-    # Calculate map size and pack parameters for top view and front view map (DON'T CHANGE THIS !)
-    Xn = int(math.floor((TOP_X_MAX - TOP_X_MIN) / TOP_X_DIVISION))
-    Yn = int(math.floor((TOP_Y_MAX - TOP_Y_MIN) / TOP_Y_DIVISION))
-    Zn = int(math.floor((TOP_Z_MAX - TOP_Z_MIN) / TOP_Z_DIVISION))
-
-    top_flip = np.ones((Xn, Yn, Zn + 2), dtype=np.double)  # DON'T CHpyANGE THIS !
-    num = lidar.shape[0]  # DON'T CHANGE THIS !
-
-    # call the C function to create top view maps
-    # The np array indata will be edited by createTopViewMaps to populate it with the 8 top view maps
-    SharedLib.createTopMaps(ctypes.c_void_p(lidar.ctypes.data),
-                            ctypes.c_int(num),
-                            ctypes.c_void_p(top_flip.ctypes.data),
-                            ctypes.c_float(TOP_X_MIN), ctypes.c_float(TOP_X_MAX),
-                            ctypes.c_float(TOP_Y_MIN), ctypes.c_float(TOP_Y_MAX),
-                            ctypes.c_float(TOP_Z_MIN), ctypes.c_float(TOP_Z_MAX),
-                            ctypes.c_float(TOP_X_DIVISION), ctypes.c_float(TOP_Y_DIVISION),
-                            ctypes.c_float(TOP_Z_DIVISION),
-                            ctypes.c_int(Xn), ctypes.c_int(Yn), ctypes.c_int(Zn)
-                            )
-    top = np.flipud(np.fliplr(top_flip))
-    return top
-
-    # top = np.ones((height, width, channel), dtype=np.double)
-    # SharedLib.createTopViewMaps(ctypes.c_void_p(top.ctypes.data),
-    #                             ctypes.c_char_p(b_lidar_data_src_path),
-    #                             ctypes.c_float(TOP_X_MIN), ctypes.c_float(TOP_X_MAX),
-    #                             ctypes.c_float(TOP_Y_MIN), ctypes.c_float(TOP_Z_MAX),
-    #                             ctypes.c_float(TOP_Z_MIN), ctypes.c_float(TOP_Z_MAX),
-    #                             ctypes.c_float(TOP_X_DIVISION), ctypes.c_float(TOP_Y_DIVISION),
-    #                             ctypes.c_float(TOP_Z_DIVISION),
-    #                             ctypes.c_int(Xn), ctypes.c_int(Yn), ctypes.c_int(Zn))
-    #
-    # # flip image to match the original preprocess module result (data.py)
-    # top = np.flipud(np.fliplr(top))
-
 # PointCloud2 to array
 # 		https://gist.github.com/dlaz/11435820
 #       https://github.com/pirobot/ros-by-example/blob/master/rbx_vol_1/rbx1_apps/src/point_cloud2.py
 #       http://answers.ros.org/question/202787/using-pointcloud2-data-getting-xy-points-in-python/
 #       https://github.com/eric-wieser/ros_numpy/blob/master/src/ros_numpy/point_cloud2.py
-
+@autojit
 def liufeng_lidar_to_top(points):
     xres = TOP_X_DIVISION
     yres = TOP_Y_DIVISION
