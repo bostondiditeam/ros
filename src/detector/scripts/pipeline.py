@@ -132,10 +132,11 @@ def sync_callback(msg1, msg2):
     time_check_5 = time.time()
     boxes3d = rpc.predict()
     time_check_6 = time.time()
+
+    # publish (boxes3d) to tracker_node
+    markerArray = MarkerArray()
     if len(boxes3d) > 0:
         translation, size, rotation = py2utils.boxes3d_decompose(np.array(boxes3d))
-        # publish (boxes3d) to tracker_node
-        markerArray = MarkerArray()
         for i in range(len(boxes3d)):
             m = Marker()
             m.type = Marker.CUBE
@@ -149,7 +150,7 @@ def sync_callback(msg1, msg2):
             m.color.a, m.color.r, m.color.g, m.color.b = \
                 1.0, 0.0, 1.0, 0.0
             markerArray.markers.append(m)
-        pub.publish(markerArray)
+    pub.publish(markerArray)
     time_check_7 = time.time()
     print("use {:.4f} seconds for read lidar to numpy".format(time_check_1 - time_check_0))
     print("use {:.4f} seconds for read image to numpy".format(time_check_2 - time_check_1))
@@ -160,7 +161,7 @@ def sync_callback(msg1, msg2):
     print("use {:.4f} seconds for publish MarkerArray".format(time_check_7 - time_check_6))
     print("use {:.4f} seconds for total".format(time_check_7 - time_check_0))
 
-    if 1:   # if show the images for debug
+    if 0:   # if show the images for debug
         top_image = py2utils.draw_top_image(top)
         rgb_image = py2utils.draw_box3d_on_camera(rgb, np.array(boxes3d))
         rgb_image = cv2.resize(rgb_image,(rgb_image.shape[1]//2, rgb_image.shape[0]//2))

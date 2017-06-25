@@ -9,7 +9,7 @@ from nav_msgs.msg import Odometry
 from visualization_msgs.msg import Marker, MarkerArray, InteractiveMarker,  InteractiveMarkerControl, InteractiveMarkerFeedback
 from interactive_markers.interactive_marker_server import InteractiveMarkerServer
 from interactive_markers.menu_handler import MenuHandler
-import cv2
+import cv2, cv_bridge
 from image_geometry import PinholeCameraModel
 import numpy as np
 import csv, sys, os, copy
@@ -19,10 +19,6 @@ from camera_info import *
 from utils import *
 from parse_tracklet import *
 import argparse
-
-from cv_bridge import CvBridge, CvBridgeError
-
-bridge = CvBridge()
 
 # https://stackoverflow.com/questions/470690/how-to-automatically-generate-n-distinct-colors
 kelly_colors_dict = dict(
@@ -128,15 +124,16 @@ class Projection:
         return marker
 
     def handle_img_msg(self, img_msg):
-        print("handle_img_msg")
+
         now = rospy.get_rostime()
         for m in self.markerArray.markers:
             m.action = Marker.DELETE
 
         img = None
+        bridge = cv_bridge.CvBridge()
         try:
             img = bridge.imgmsg_to_cv2(img_msg, 'bgr8')
-        except CvBridgeError as e:
+        except cv_bridge.CvBridgeError as e:
             rospy.logerr( 'image message to cv conversion failed :' )
             rospy.logerr( e )
             print( e )
@@ -209,7 +206,6 @@ class Projection:
 
 
 if __name__ == "__main__" :
-    print("main")
     parser = argparse.ArgumentParser(description="visulaize tracklet")
     parser.add_argument('bag', type=str, nargs='?', default='', help='bag filename')
     parser.add_argument('tracklet', type=str, nargs='?', default='', help='tracklet filename')

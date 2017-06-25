@@ -1,0 +1,14 @@
+<launch>
+    <arg name="bag_DIR" default="/ext/Data/Round_2/release/" />
+    <arg name="bag" default="car/testing/ford01" />
+    <arg name="rate" default="1." />
+    <node name="detector" pkg="detector" type="pipeline.py"/>
+    <!--<node name="tracker" pkg="tracker" type="tracker.py"/>-->
+    <node name="rosbag" pkg="rosbag" type="play" args="-r $(arg rate) -l --clock $(arg bag_DIR)/$(arg bag).bag"/>
+    <node name="projection" pkg="projection" type="visualize_result.py" args="$(find projection)/scripts/ost_new.yaml"/>
+
+	<node name="velodyne" pkg="velodyne_pointcloud" type="cloud_node" args="">
+        <param name="calibration" value="$(find velodyne_pointcloud)/params/32db.yaml" />
+    </node>
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find projection)/launch/config-result.rviz"  />
+</launch>

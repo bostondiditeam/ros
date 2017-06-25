@@ -22,7 +22,7 @@ RGB_SHAPE = (596, 1368, 3)  # to be decided (1096, 1368, 3)
 #m3 = mod.MV3D()
 #m3.predict_init(LIDAR_TOP_SHAPE, LIDAR_FRONT_SHAPE, RGB_SHAPE)
 process = Preprocess()
-predict = mv3d.Predictor(LIDAR_TOP_SHAPE, LIDAR_FRONT_SHAPE, RGB_SHAPE, log_tag='didi2')
+predict = mv3d.Predictor(LIDAR_TOP_SHAPE, LIDAR_FRONT_SHAPE, RGB_SHAPE, log_tag='default-didi2')
 
 print("testing predict:")
 dir = os.path.join(sys.path[0], "/ext2/round2_data/output/suburu_driving_past_it/suburu07")
