@@ -12,7 +12,7 @@ sys.path.append(os.path.join(sys.path[0],"../MV3D/src"))
 import mv3d
 from net.processing.boxes3d import boxes3d_decompose
 from data import Preprocess
-from util import *
+import py2utils
 
 print("init the network")
 LIDAR_TOP_SHAPE = (500, 300, 15) # to be decided (400, 400, 8)
@@ -32,9 +32,9 @@ print(rgb.shape)
 lidar_path = os.path.join(dir, "velodyne_points/data", "1492888603962510690.bin")
 lidar =np.fromfile(lidar_path, np.float32)
 lidar = lidar.reshape((-1, 4))
-top = g_lidar_to_top(lidar)
+top = py2utils.g_lidar_to_top(lidar)
 if 0: # test top is ok?
-    top_image = draw_top_image(top)
+    top_image = py2utils.draw_top_image(top)
     cv2.imshow("top", top_image)
     cv2.waitKey(10000)
 front = np.zeros((0, ), dtype=np.float32)
