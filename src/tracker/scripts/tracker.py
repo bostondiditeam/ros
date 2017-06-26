@@ -6,6 +6,7 @@ import tf
 from visualization_msgs.msg import Marker, MarkerArray
 from sensor_msgs.msg import PointCloud2, Image
 from Tracklet_saver import *
+import argparse
 
 import multi_object_tracker as mot
 import time
@@ -30,15 +31,16 @@ class Tracker:
 
 
     def write_final_tracklet_xml(self):
-        if (not self.tracklet_generated):
+        if not self.tracklet_generated:
             self.tracklet_saver.write_tracklet()
             self.tracklet_generated = True
             print '---------tracklet exported------------------'
-            rospy.signal_shutdown('Tracklet exported')
+            #rospy.signal_shutdown('Tracklet exported')
 
     def save_gen_tracklet(self, frameid, scale, trans, rot): #, timestamp, bbox):
         #print 'Save tracklet'
-        self.tracklet_saver.add_tracklet(frameid, scale, trans, rot)
+        if not self.tracklet_generated:
+            self.tracklet_saver.add_tracklet(frameid, scale, trans, rot)
 
     def kalman_update(self, frameid, scale, trans, rot):
         #print 'Kalman update #', trackid
@@ -109,6 +111,8 @@ class Tracker:
         self.total_time += cycle_time
         self.num_updates += 1.
 
+        self.ros_publish_final_bbox()
+
         print('kalman update')
         for i in range(self.tracked_targets.shape[0]):
             tx, ty, tz, w, l, rz,  h, rx, ry = self.tracked_targets[i,:]
@@ -139,23 +143,22 @@ class Tracker:
 
     def handle_bbox_msg(self,msg):
         if (not self.tracklet_generated) and (len(msg.markers)>0):
+            #print('time0', 'time1')
+            #print(msg.markers[0].header.stamp.to_nsec())
+            print "handle_bbox_msg", msg.markers[-1].header.stamp.to_nsec()
+            self.bbox_lasttimestamp = msg.markers[-1].header.stamp
 
-            print('time0', 'time1')
-            print(msg.markers[0].header.stamp.to_nsec())
-            print(msg.markers[-1].header.stamp.to_nsec())
-            # self.tracklet_lasttimestamp = msg.markers[-1].header.stamp.to_nsec()
             # print 'bbox time  ', self.tracklet_lasttimestamp, ', Total bbox in this frame = ', len(msg.markers)
-            m = msg.markers[0]
-            print 'tx,ty,tz:', m.pose.position.x, m.pose.position.y, m.pose.position.z
-            print 'w,l,h:', m.scale.x, m.scale.y, m.scale.z
-            print 'rx,ry,rz:', m.pose.orientation.x, m.pose.orientation.y, m.pose.orientation.z
-
             bboxes = self._marker_to_boxes(msg.markers)
             # self.hungarian_update(np.asarray(bboxes))
-            print('bounding boxes')
-            print(np.asarray(bboxes))
+            if 0:   #debug info
+                m = msg.markers[0]
+                print('bounding boxes')
+                print(np.asarray(bboxes))
+
             self.tracker_update(np.asarray(bboxes))
             self.tracklet_lasttimestamp = msg.markers[-1].header.stamp.to_nsec()
+
 
     def _marker_to_boxes(self, markers):
         """Convert MarkerArray to bounding boxes.
@@ -167,12 +170,10 @@ class Tracker:
         bboxes = []
 
         for m in markers:
-
             trans = m.pose.position
             scale = m.scale
-
             tx, ty, tz = trans.x, trans.y, trans.z
-            w, l, h = scale.x, scale.y, scale.z
+            l, w, h = scale.x, scale.y, scale.z
             rx, ry, rz = tf.transformations.euler_from_quaternion(
                 [m.pose.orientation.x,
                  m.pose.orientation.y,
@@ -180,19 +181,40 @@ class Tracker:
                  m.pose.orientation.w])
 
             # if m.header.stamp.to_nsec() == bboxtime:
-            if (m.header.stamp.to_nsec() > self.tracklet_lasttimestamp):
+            #if (m.header.stamp.to_nsec() > self.tracklet_lasttimestamp):
+            if 1:
                 print('bbox {}, time={}, Pos = [{},{},{}]'.format(m.id,  m.header.stamp, tx,ty,tz))
                 # bboxtime = m.header.stamp
                 bboxes.append([tx, ty, tz, w, l, rz, h, rx, ry])
 
         return bboxes
 
+    def ros_publish_final_bbox(self):
+        markerArray = MarkerArray()
+        for i in range(self.tracked_targets.shape[0]):
+            tx, ty, tz, w, l, rz,  h, rx, ry = self.tracked_targets[i,:]
+            m = Marker()
+            m.type = Marker.CUBE
+            m.header.frame_id = "velodyne"
+            m.header.stamp = self.bbox_lasttimestamp
+            m.scale.x, m.scale.y, m.scale.z = l, w, h
+            m.pose.position.x, m.pose.position.y, m.pose.position.z = tx, ty, tz
+            quaternion = tf.transformations.quaternion_from_euler(rx, ry, rz)
+            m.pose.orientation.x, m.pose.orientation.y, m.pose.orientation.z, m.pose.orientation.w = \
+                quaternion[0],quaternion[1],quaternion[2],quaternion[3]
+            m.color.a, m.color.r, m.color.g, m.color.b = \
+                0.5, 0.0, 1.0, 0.0
+            markerArray.markers.append(m)
+
+        self.pub.publish(markerArray)
 
     def startlistening(self):
         rospy.init_node('tracker', anonymous=True)
-        rospy.Subscriber('/image_raw', Image, self.handle_image_msg) # for frame number
+        #rospy.Subscriber('/image_raw', Image, self.handle_image_msg) # for frame number
+        rospy.Subscriber('/velodyne_points', PointCloud2, self.handle_lidar_msg) # for timing data
         rospy.Subscriber('/velodyne_points', PointCloud2, self.handle_lidar_msg) # for timing data
         rospy.Subscriber("/bbox", MarkerArray, self.handle_bbox_msg)
+        self.pub = rospy.Publisher("bbox_final", MarkerArray, queue_size=1)
         print 'tracker node initialzed'
         rospy.spin()
 

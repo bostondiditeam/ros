@@ -6,6 +6,8 @@ import cv2
 import os
 import time
 import math
+import numpy as np
+import tf
 
 #os.system('roslaunch velodyne_pointcloud 32e_points.launch &')
 sys.path.append(os.path.join(sys.path[0],"../MV3D/src"))
@@ -142,13 +144,18 @@ def sync_callback(msg1, msg2):
             m.type = Marker.CUBE
             m.header.frame_id = "velodyne"
             m.header.stamp = msg2.header.stamp
-            m.scale.x, m.scale.y, m.scale.z = size[i][0],size[i][1],size[i][2]
+            # translation-- H,W,L  but m.scalen: l,w,h
+            m.scale.x, m.scale.y, m.scale.z = size[i][2],size[i][1],size[i][0]
             m.pose.position.x, m.pose.position.y, m.pose.position.z = \
                 translation[i][0], translation[i][1], translation[i][2]
+
+            quaternion = tf.transformations.quaternion_from_euler(rotation[i][0], rotation[i][1], rotation[i][2])
             m.pose.orientation.x, m.pose.orientation.y, m.pose.orientation.z, m.pose.orientation.w = \
-                rotation[i][0], rotation[i][1], rotation[i][2], 0.
+                quaternion[0], quaternion[1], quaternion[2], quaternion[3],
+            # m.pose.orientation.x, m.pose.orientation.y, m.pose.orientation.z, m.pose.orientation.w = \
+            #     rotation[i][0], rotation[i][1], rotation[i][2], 1.
             m.color.a, m.color.r, m.color.g, m.color.b = \
-                1.0, 0.0, 1.0, 0.0
+                0.5, 1.0, 1.0, 0.0
             markerArray.markers.append(m)
     pub.publish(markerArray)
     time_check_7 = time.time()

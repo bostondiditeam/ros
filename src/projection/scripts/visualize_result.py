@@ -29,8 +29,9 @@ class Projection:
         self.imgOutput = rospy.Publisher('/image_bbox', Image, queue_size=1)
 
         # camera image
-        self.img_msg_queue = list() # Queue.queue()
         self.camera_image = None
+        self.mv3d_bbox = []
+        self.kalman_bbox = []
 
     def subscribe_messages(self):
         # image_raw_sub = message_filters.Subscriber('/image_raw', Image)
@@ -39,65 +40,69 @@ class Projection:
         # ts.registerCallback(self.handle_msg)
         rospy.Subscriber('/image_raw', Image, self.handle_img_msg)
         rospy.Subscriber('/bbox', MarkerArray, self.handle_bbox_msg)
+        rospy.Subscriber('/bbox_final', MarkerArray, self.handle_bbox_final_msg)
 
-    def handle_bbox_msg(self, bbox_msg):
-        if self.camera_image == None: return
-        markers = bbox_msg.markers
+
+    def _draw_marker_to_image(self, out_img, m):
+        dims = np.array([m.scale.x, m.scale.y, m.scale.z])
+        obs_centroid = np.array([m.pose.position.x, m.pose.position.y, m.pose.position.z])
+        orient = np.array([m.pose.orientation.x, m.pose.orientation.y, m.pose.orientation.z, m.pose.orientation.w])
+
+        if obs_centroid is None:
+            rospy.loginfo("Couldn't find obstacle centroid")
+            return out_img
+
+        # print centroid info
+        rospy.loginfo(str(obs_centroid))
+
+        # case when obstacle is not in camera frame
+        if obs_centroid[0] < 3:
+            return out_img
+            # self.imgOutput.publish(bridge.cv2_to_imgmsg(img, 'bgr8'))
+            # return
+
+        # get bbox
+        R = tf.transformations.quaternion_matrix(orient)
+        corners = [0.5 * np.array([i, j, k]) * dims for i in [-1, 1]
+                   for j in [-1, 1] for k in [-1, 1]]
+        corners = [obs_centroid + R.dot(list(c) + [1])[:3] for c in corners]
+        cameraModel = PinholeCameraModel()
+        cam_info = load_cam_info(self.calib_file)
+        cameraModel.fromCameraInfo(cam_info)
+        projected_pts = [cameraModel.project3dToPixel(list(pt) + [1]) for pt in corners]
+        projected_pts = np.array(projected_pts)
+        center = np.mean(projected_pts, axis=0)
+        color = (m.color.b*255, m.color.g*255, m.color.r*255)
+        out_img = drawBbox(out_img, projected_pts, color=color)
+        return out_img
+
+    def _draw_bblox_image(self):
         out_img = self.camera_image
-        if len(markers) > 0:
-            seq = markers[0].header.seq
-            timestamp = markers[0].header.stamp.to_nsec()
-            print('=====bbox_callback: msg : seq=%d, timestamp=%19d' % (seq, timestamp))
-            # sync
-            # i = 0
-            # for i in range(len(self.img_msg_queue)):
-            #     if timestamp < self.img_msg_queue[i].header.stamp.to_nsec():
-            #         out_img = bridge.imgmsg_to_cv2(self.img_msg_queue[i], 'bgr8')
-            #         self.img_msg_queue = self.img_msg_queue[i+1:]
-            #         break
 
-        for m in markers:
-            dims = np.array([m.scale.x, m.scale.y, m.scale.z])
-            obs_centroid = np.array([m.pose.position.x, m.pose.position.y, m.pose.position.z])
-            orient = np.array([m.pose.orientation.x, m.pose.orientation.y, m.pose.orientation.z, m.pose.orientation.w])
+        for m in self.mv3d_bbox:
+            out_img = self._draw_marker_to_image(out_img, m)
 
-            if obs_centroid is None:
-                rospy.loginfo("Couldn't find obstacle centroid")
-                continue
-
-            # print centroid info
-            rospy.loginfo(str(obs_centroid))
-
-            # case when obstacle is not in camera frame
-            if obs_centroid[0] < 3:
-                continue
-                # self.imgOutput.publish(bridge.cv2_to_imgmsg(img, 'bgr8'))
-                # return
-
-            # get bbox
-            R = tf.transformations.quaternion_matrix(orient)
-            corners = [0.5 * np.array([i, j, k]) * dims for i in [-1, 1]
-                       for j in [-1, 1] for k in [-1, 1]]
-            corners = [obs_centroid + R.dot(list(c) + [1])[:3] for c in corners]
-            cameraModel = PinholeCameraModel()
-            cam_info = load_cam_info(self.calib_file)
-            cameraModel.fromCameraInfo(cam_info)
-            projected_pts = [cameraModel.project3dToPixel(list(pt) + [1]) for pt in corners]
-            projected_pts = np.array(projected_pts)
-            center = np.mean(projected_pts, axis=0)
-            color = (m.color.b, m.color.g, m.color.r)
-            out_img = drawBbox(out_img, projected_pts, color=color)
+        for m in self.kalman_bbox:
+            out_img = self._draw_marker_to_image(out_img, m)
 
         self.imgOutput.publish(bridge.cv2_to_imgmsg(out_img, 'bgr8'))
+
+    def handle_bbox_msg(self, bbox_msg):
+        if self.camera_image == None:
+            return
+        self.mv3d_bbox = bbox_msg.markers
+        self._draw_bblox_image()
+
+    def handle_bbox_final_msg(self, bbox_final_msg):
+        if self.camera_image == None:
+            return
+        self.kalman_bbox = bbox_final_msg.markers
+        self._draw_bblox_image()
 
     def handle_img_msg(self, img_msg):
         timestamp = img_msg.header.stamp.to_nsec()
         print('=====image_callback: msg : seq=%d, timestamp=%19d' % (img_msg.header.seq, timestamp))
-
-        img = None
-        img = bridge.imgmsg_to_cv2(img_msg, 'bgr8')
-        self.img_msg_queue.append(img_msg)
-        self.camera_image = img
+        self.camera_image = bridge.imgmsg_to_cv2(img_msg, 'bgr8')
 
 if __name__ == "__main__" :
     parser = argparse.ArgumentParser(description="visulaize for result")
