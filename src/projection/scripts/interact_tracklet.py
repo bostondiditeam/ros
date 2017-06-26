@@ -196,7 +196,7 @@ class Projection:
         R = tf.transformations.quaternion_matrix(self.rotation_offset)
         rotated_centroid = R.dot(list(obs_centroid)+[1])
         obs_centroid = rotated_centroid[:3]
-        #self.orient = list(f.rotq)
+        self.orient = list(f.rotq)
  
         self.marker.header.stamp = now
         self.marker.pose.position = Point(*list(obs_centroid))
