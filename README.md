@@ -32,12 +32,14 @@ $ source devel/setup.bash
 ```
 3. Run the python 3 rpc predict service
 ```
-$ python3 src/detector/scripts/predict_rpc.py
+$ python3 src/detector/scripts/predict_rpc.py <<tag>>
 ```
+
+the tag is the tag for taining weights directory name, which tag is your training tag.
 
 4. run all from ros launch
 ```
-roslaunch src/projection/launch/liufeng_visualize.launch
+roslaunch src/projection/launch/liufeng_visualize.launch bag:=<<bag>> rate:=<<rate>>
 ```
 
 if you run the launche file
@@ -55,14 +57,15 @@ in the visible tools
 - the green box is the result by kalman filter in tracker ros node
 
 the launch file is
+and <<bag>> and <<rate>> is defined in the launch xml
 ``` xml
 <launch>
     <!--change it to your bag directory-->
     <arg name="bag_DIR" default="/ext/Data/Round_2/release/" />
     <!--change it to the mame which bag you need to run-->
     <arg name="bag" default="car/testing/ford01" />
-
     <arg name="rate" default="0.2" />
+
     <node name="detector" pkg="detector" type="pipeline.py"/>
     <node name="tracker" pkg="tracker" type="tracker.py"/>
 

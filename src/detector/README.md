@@ -6,8 +6,10 @@
  
 ```sh
 # must in python3.5 env
-python predict_rpc.py
+python predict_rpc.py <<tag>>
 ```
+
+the tag is the tag for taining weightsi, which tag is your training tag
 
 ### 2. run ros node
 

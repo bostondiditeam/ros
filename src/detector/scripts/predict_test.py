@@ -9,10 +9,11 @@ import xmlrpclib
 import py2utils
 
 sys.path.append(os.path.join(sys.path[0],"../MV3D/src"))
+from config import cfg
 
 rpc=xmlrpclib.ServerProxy('http://localhost:8080/')
 
-dir = os.path.join(sys.path[0], "/ext2/round2_data/output/test_car/ford01")
+dir = os.path.join(cfg.RAW_DATA_SETS_DIR, "test_car/ford01")
 rgb_path = os.path.join(dir, "image_02/data", "1492886986795029860.png")
 print("rgb_path:{}".format(rgb_path))
 rgb = py2utils.crop_image(cv2.imread(rgb_path))
