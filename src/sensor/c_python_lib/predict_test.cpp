@@ -52,7 +52,6 @@ void printPyArray(PyObject *object){
 	
     if(PyArray_Check(object)){
 		PyArrayObject *pAarray = (PyArrayObject *)object;  
-		// ��ǰά��
         int nd = pAarray -> nd;   
 
 		// print shape 
@@ -73,17 +72,11 @@ void printPyArray(PyObject *object){
 				cout<< count << ", " ;
 			}
 		}
-			
-		// ��3άnumpy����Ϊ�����			
+						
 		int x = pAarray -> dimensions[0];
 		int	y = pAarray->dimensions[1];
 		int	z = pAarray->dimensions[2];		
-		/**		
-		*	int nd��Numpy Array�����ά�ȡ�
-		*	int *dimensions ��Numpy Array ����ÿһά�����ݵĸ�����
-		*	int *strides��Numpy Array ����ÿһά�ȵĲ�����
-		*	char *data�� Numpy Array ��ָ�����ݵ�ͷָ�롣		
-		*/
+
 		cout << endl << endl <<"[";
 		for(int j = 0; j < x; j ++ ){
 			cout <<"[";

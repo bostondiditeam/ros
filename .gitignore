@@ -108,3 +108,5 @@ devel/*
 
 # velodyne
 velodyne
+
+src/sensor/c_python_lib/predict_test
