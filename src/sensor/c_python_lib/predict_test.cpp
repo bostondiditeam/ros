@@ -68,8 +68,8 @@ int main(int argc, char* argv[])
 	double*** topArrays = create3DArray(3, 3, 3);
 	double*** rgbArrays = create3DArray(3, 3, 3);
 
-    npy_intp  topDims[4] = {3, 3, 3};
-    npy_intp  rgbDims[4] = {3, 3, 3};
+    npy_intp  topDims[3] = {3, 3, 3};
+    npy_intp  rgbDims[3] = {3, 3, 3};
 
 	cout << "init ok" << endl;
 

@@ -13,7 +13,7 @@ the tag is the tag for taining weightsi, which tag is your training tag
 
 ### 2. run ros node
 
-run ros detecter node , which is use python 3.7
+run ros detecter node , which is use python 2.7
 
 ```buildoutcfg
 # must in python2.7 env
