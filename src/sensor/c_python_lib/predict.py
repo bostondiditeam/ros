@@ -29,30 +29,31 @@ def predict_func(top, rgb):
     #assert(rgb.shape == RGB_SHAPE)
     start = time.time()
     boxes3d, probs = predict([top], [front], [rgb])
-    print("predict boxes len: {} use time {}".format(boxes3d.shape[0], time.time() - start))
-    return boxes3d
+    print("predict boxes: {} use time {}".format(boxes3d.shape, time.time() - start))
+    return np.copy(boxes3d)
 
 # Testing self
-print("===== begin testing predict:")
-dir = os.path.join(cfg.RAW_DATA_SETS_DIR, "suburu_driving_past_it/suburu07")
-rgb_path = os.path.join(dir, "image_02/data", "1492888603962510690.png")
-print(rgb_path)
-rgb = py2utils.crop_image(cv2.imread(rgb_path))
-print(rgb.shape)
-lidar_path = os.path.join(dir, "velodyne_points/data", "1492888603962510690.bin")
-lidar =np.fromfile(lidar_path, np.float32)
-lidar = lidar.reshape((-1, 4))
-top = py2utils.g_lidar_to_top(lidar)
-boxes3d = predict_func(top, rgb)
-print("===== end testing predict:")
+if 1:
+    print("===== begin testing predict:")
+    dir = os.path.join(cfg.RAW_DATA_SETS_DIR, "suburu_driving_past_it/suburu07")
+    rgb_path = os.path.join(dir, "image_02/data", "1492888603962510690.png")
+    print(rgb_path)
+    rgb = py2utils.crop_image(cv2.imread(rgb_path))
+    print(rgb.shape)
+    lidar_path = os.path.join(dir, "velodyne_points/data", "1492888603962510690.bin")
+    lidar =np.fromfile(lidar_path, np.float32)
+    lidar = lidar.reshape((-1, 4))
+    top = py2utils.g_lidar_to_top(lidar)
+    boxes3d = predict_func(top, rgb)
+    print("===== end testing predict:")
 
 def predict_test(top : np.array, rgb : np.array):
     print(top.shape)
     print(rgb.shape)
     print("================================")
-    print(top)
+    print("{}".format(top))
     print("================================")
-    print(rgb)
+    print("{}".format(rgb))
     return top
 
 def func(_a, _b, _c):
