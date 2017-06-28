@@ -282,7 +282,6 @@ if __name__ == "__main__" :
     assert os.path.isfile(calib_file), 'Calibration file %s does not exist' % calib_file
 
     tracklets = parse_xml(tracklet_file)
-    rospy.loginfo("parse_xml end. items=%d"%len(tracklets))
 
     try :
         p = Projection(bag_file, md_path, calib_file, tracklets)    

@@ -1,8 +1,0 @@
-prefix=/ext2/didigithub/ros/devel
-
-Name: projection
-Description: Description of projection
-Version: 0.0.0
-Cflags: 
-Libs: -L/ext2/didigithub/ros/devel/lib 
-Requires: 

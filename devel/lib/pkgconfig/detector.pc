@@ -1,8 +1,0 @@
-prefix=/ext2/didigithub/ros/devel
-
-Name: detector
-Description: Description of detector
-Version: 0.0.0
-Cflags: 
-Libs: -L/ext2/didigithub/ros/devel/lib 
-Requires: 

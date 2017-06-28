@@ -96,8 +96,8 @@ gen/*
 *.app
 
 # devel
-#devel
-#devel/*
+devel
+devel/*
 
 # temp file
 *~
