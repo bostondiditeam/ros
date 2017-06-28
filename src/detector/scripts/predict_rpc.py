@@ -8,7 +8,7 @@ import sys
 import time
 
 sys.path.append(os.path.join(sys.path[0],"../MV3D/src"))
-
+from config import cfg
 import mv3d
 from net.processing.boxes3d import boxes3d_decompose
 from data import Preprocess
@@ -35,7 +35,7 @@ front = np.zeros((0, ), dtype=np.float32)
 
 def testCase():
     print("testing predict:")
-    dir = os.path.join(sys.path[0], "/ext2/round2_data/output/suburu_driving_past_it/suburu07")
+    dir = os.path.join(cfg.RAW_DATA_SETS_DIR, "suburu_driving_past_it/suburu07")
     rgb_path = os.path.join(dir, "image_02/data", "1492888603962510690.png")
     rgb = process.rgb(cv2.imread(rgb_path))
     print(rgb.shape)
