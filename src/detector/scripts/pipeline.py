@@ -25,6 +25,8 @@ import message_filters
 
 import xmlrpclib
 import py2utils
+import data
+from net.processing.boxes3d import boxes3d_decompose
 
 
 rpc=xmlrpclib.ServerProxy('http://localhost:8080/')
@@ -118,15 +120,15 @@ def sync_callback(msg1, msg2):
 
     time_check_0 = time.time()
     arr = msg_to_arr(msg2)
-    lidar = np.array([[item[0], item[1], item[2], item[3]/255.] for item in arr])
+    lidar = np.array([[item[0], item[1], item[2], item[3]/255.] for item in arr],dtype=np.float32)
     time_check_1 = time.time()
 
     camera_image = bridge.imgmsg_to_cv2(msg1, "bgr8")
     time_check_2 = time.time()
-    rgb = py2utils.crop_image(camera_image)
+    rgb = data.preprocess.rgb(camera_image)
     time_check_3 = time.time()
 
-    top = py2utils.g_lidar_to_top(lidar)
+    top = data.preprocess.lidar_to_top(lidar)
     time_check_4 = time.time()
 
     np.save(os.path.join(sys.path[0], "../MV3D/data/", "top.npy"), top)
@@ -138,7 +140,7 @@ def sync_callback(msg1, msg2):
     # publish (boxes3d) to tracker_node
     markerArray = MarkerArray()
     if len(boxes3d) > 0:
-        translation, size, rotation = py2utils.boxes3d_decompose(np.array(boxes3d))
+        translation, size, rotation = boxes3d_decompose(np.array(boxes3d))
         for i in range(len(boxes3d)):
             m = Marker()
             m.type = Marker.CUBE
