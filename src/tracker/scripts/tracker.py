@@ -10,6 +10,11 @@ import argparse
 
 import multi_object_tracker as mot
 import time
+import os
+
+log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__),'dump'))
+if os.path.isdir(log_dir) == False: os.makedirs(log_dir)
+log_count=0
 
 class Tracker:
 
@@ -80,6 +85,7 @@ class Tracker:
             self.tracklet_lasttimestamp = bboxtime
 
     def tracker_update(self, detections):
+        global log_count
         """Performs Kalman Filter update and maintains track on obstacles.
 
         Args:
@@ -102,6 +108,14 @@ class Tracker:
         """
         start_time = time.time()
         self.tracked_targets, self.tracked_ids = self.mot_tracker.update(detections)
+        rospy.logerr('\ndetections ={}\ntype={}\n'.format(detections,type(detections)))
+        rospy.logerr('\nself.tracked_targets ={}\nself.tracked_ids={}\n'.
+                     format(self.tracked_targets, self.tracked_ids))
+        path = os.path.join(log_dir,'detections_%05d'%(log_count))
+        np.save(path, detections)
+        rospy.logerr('save: {} ok'.format(path))
+        log_count=log_count+1
+
 
         # the kalman filter returns numpy array in the form:
         # self.tracked_targets shape = [n_detections, box_dim]
