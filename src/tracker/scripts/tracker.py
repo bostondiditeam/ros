@@ -34,7 +34,7 @@ class Tracker:
         if not self.tracklet_generated:
             self.tracklet_saver.write_tracklet()
             self.tracklet_generated = True
-            print '---------tracklet exported------------------'
+            print('---------tracklet exported------------------')
             #rospy.signal_shutdown('Tracklet exported')
 
     def save_gen_tracklet(self, frameid, scale, trans, rot): #, timestamp, bbox):
@@ -68,7 +68,7 @@ class Tracker:
                 rot = np.asarray([roll,pitch,yaw])
 
                 if  m.header.stamp.to_nsec() == bboxtime: # in case there are old entries
-                    print 'bbox ',m.id, ' time = ', m.header.stamp.to_nsec(), ': Pos = [',trans,']'
+                    print('bbox ',m.id, ' time = ', m.header.stamp.to_nsec(), ': Pos = [',trans,']')
                     bboxtime = m.header.stamp.to_nsec()
                     trackindex += 1
 
@@ -135,17 +135,17 @@ class Tracker:
         if (not self.tracklet_generated):
             timestamplidar = msg.header.stamp.to_nsec()
             if timestamplidar < self.lidar_lasttimestamp: # rosplay loops
-                print 'generating tracklet'
+                print('generating tracklet')
                 self.write_final_tracklet_xml()
             else:
                 self.lidar_lasttimestamp = timestamplidar
-                print 'lidar time ', self.lidar_lasttimestamp
+                print('lidar time ', self.lidar_lasttimestamp)
 
     def handle_bbox_msg(self,msg):
         if (not self.tracklet_generated) and (len(msg.markers)>0):
             #print('time0', 'time1')
             #print(msg.markers[0].header.stamp.to_nsec())
-            print "handle_bbox_msg", msg.markers[-1].header.stamp.to_nsec()
+            print("handle_bbox_msg", msg.markers[-1].header.stamp.to_nsec())
             self.bbox_lasttimestamp = msg.markers[-1].header.stamp
 
             # print 'bbox time  ', self.tracklet_lasttimestamp, ', Total bbox in this frame = ', len(msg.markers)
@@ -215,7 +215,7 @@ class Tracker:
         rospy.Subscriber('/velodyne_points', PointCloud2, self.handle_lidar_msg) # for timing data
         rospy.Subscriber("/bbox", MarkerArray, self.handle_bbox_msg)
         self.pub = rospy.Publisher("bbox_final", MarkerArray, queue_size=1)
-        print 'tracker node initialzed'
+        print('tracker node initialzed')
         rospy.spin()
 
 if __name__ == "__main__":
