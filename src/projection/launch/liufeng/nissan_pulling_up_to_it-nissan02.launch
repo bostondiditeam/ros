@@ -1,6 +1,6 @@
 <launch>
     <arg name="bag_DIR" default="/ext/Data/Round_2/release/car/training" />
-    <arg name="tracklets_DIR" default="/ext2/round2_data/tracklets" />
+    <arg name="tracklets_DIR" default="/ext2/round2_data/output" />
     <arg name="bag" default="nissan_pulling_up_to_it/nissan02" />
     <arg name="rate" default="1" />
     <param name="use_sim_time" value="true" />
@@ -8,6 +8,6 @@
 	<node name="velodyne" pkg="velodyne_pointcloud" type="cloud_node" args="">
         <param name="calibration" value="$(find velodyne_pointcloud)/params/32db.yaml" />
     </node>
-	<node name="projection" pkg="projection" type="interact_tracklet.py" args="$(arg bag_DIR)/$(arg bag).bag $(arg tracklets_DIR)/$(arg bag)_corrected.xml $(find projection)/scripts/ost_new.yaml"/>
+	<node name="projection" pkg="projection" type="interact_tracklet.py" args="$(arg bag_DIR)/$(arg bag).bag $(arg tracklets_DIR)/$(arg bag)/tracklet_labels.xml $(find projection)/scripts/ost_new.yaml"/>
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find projection)/launch/config.rviz"  />
 </launch>
