@@ -108,13 +108,16 @@ class Tracker:
         """
         start_time = time.time()
         self.tracked_targets, self.tracked_ids = self.mot_tracker.update(detections)
-        rospy.logerr('\ndetections ={}\ntype={}\n'.format(detections,type(detections)))
-        rospy.logerr('\nself.tracked_targets ={}\nself.tracked_ids={}\n'.
-                     format(self.tracked_targets, self.tracked_ids))
-        path = os.path.join(log_dir,'detections_%05d'%(log_count))
-        np.save(path, detections)
-        rospy.logerr('save: {} ok'.format(path))
-        log_count=log_count+1
+
+        if 0:
+            #dump log files
+            rospy.logerr('\ndetections ={}\ntype={}\n'.format(detections,type(detections)))
+            rospy.logerr('\nself.tracked_targets ={}\nself.tracked_ids={}\n'.
+                         format(self.tracked_targets, self.tracked_ids))
+            path = os.path.join(log_dir,'detections_%05d'%(log_count))
+            np.save(path, detections)
+            rospy.logerr('save: {} ok'.format(path))
+            log_count=log_count+1
 
 
         # the kalman filter returns numpy array in the form:
@@ -156,22 +159,29 @@ class Tracker:
                 print('lidar time ', self.lidar_lasttimestamp)
 
     def handle_bbox_msg(self,msg):
-        if (not self.tracklet_generated) and (len(msg.markers)>0):
-            #print('time0', 'time1')
-            #print(msg.markers[0].header.stamp.to_nsec())
+        # if (not self.tracklet_generated) and (len(msg.markers)>0):
+        #print('time0', 'time1')
+        #print(msg.markers[0].header.stamp.to_nsec())
+        rospy.logerr('len(msg.markers)  = {}'.format(len(msg.markers)))
+
+
+        # print 'bbox time  ', self.tracklet_lasttimestamp, ', Total bbox in this frame = ', len(msg.markers)
+
+        bboxes = []
+        if len(msg.markers)>0:
             print("handle_bbox_msg", msg.markers[-1].header.stamp.to_nsec())
             self.bbox_lasttimestamp = msg.markers[-1].header.stamp
-
-            # print 'bbox time  ', self.tracklet_lasttimestamp, ', Total bbox in this frame = ', len(msg.markers)
             bboxes = self._marker_to_boxes(msg.markers)
-            # self.hungarian_update(np.asarray(bboxes))
-            if 0:   #debug info
-                m = msg.markers[0]
-                print('bounding boxes')
-                print(np.asarray(bboxes))
-
-            self.tracker_update(np.asarray(bboxes))
             self.tracklet_lasttimestamp = msg.markers[-1].header.stamp.to_nsec()
+        # self.hungarian_update(np.asarray(bboxes))
+
+        if 0:   #debug info
+            m = msg.markers[0]
+            print('bounding boxes')
+            print(np.asarray(bboxes))
+
+        self.tracker_update(np.asarray(bboxes))
+
 
 
     def _marker_to_boxes(self, markers):

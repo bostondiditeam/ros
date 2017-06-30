@@ -288,6 +288,9 @@ class Sort(object):
 
         NOTE: The number of objects returned may differ from the number of detections provided.
         """
+        # reset
+        if self.frame_count > self.min_hits and len(self.trackers)==0:
+            self.frame_count = 0
         self.frame_count += 1
         # get predicted locations from existing trackers.
         trks = np.zeros((len(self.trackers), 7))
@@ -351,7 +354,7 @@ class Sort(object):
             if(trk.time_since_update > self.max_age):
                 print('remove :{}'.format(i))
                 self.trackers.pop(i)
-            elif self.frame_count > self.min_hits and trk.hits*1./self.frame_count<0.6:
+            elif self.frame_count > self.min_hits and trk.hits*1./self.frame_count<0.3:
                 print('remove :{}'.format(i))
                 self.trackers.pop(i)
 
@@ -403,6 +406,8 @@ if __name__ == '__main__':
         detections = np.load('./dump/detections_%05d.npy'%(i))
         # if i ==9:
         #     detections = np.load('./dump/detections_%05d.npy'%(i-1))
+        if i == 20:
+            detections = np.asarray([])
         tracked_targets, tracked_ids = sort.update(detections)
         print('-------------%d----------------------' %i)
         print('input:{}\n\ntargets:{}\n\nids:{}\n\n'.format(detections,tracked_targets, tracked_ids) )
