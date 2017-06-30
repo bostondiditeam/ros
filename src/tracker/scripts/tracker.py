@@ -5,21 +5,26 @@ import numpy as np
 import tf
 from visualization_msgs.msg import Marker, MarkerArray
 from sensor_msgs.msg import PointCloud2, Image
-from Tracklet_saver import *
 import argparse
 
 import multi_object_tracker as mot
 import time
+import os
+import sys
+from Tracklet_saver import *
 
 class Tracker:
 
-    def __init__(self):
+    def __init__(self, tracklet_name):
         self.current_time = rospy.Time()
-        self.tracklet_saver = Tracklet_saver('./')
+        tracklet_file_dir = os.path.join(os.path.split(__file__)[0], "../")
+        print('start %s %s' % (tracklet_file_dir, tracklet_name))
+        self.tracklet_saver = Tracklet_saver(tracklet_file_dir, tracklet_name, exist_ok=True)
         self.lidar_lasttimestamp = -1
         self.tracklet_lasttimestamp = -1
         self.tracklet_generated = False
         self.cameraframeindex = -1
+        self.bboxframeindex = -1
 
         # initialize Kalman Tracker
         #default params (min_hits=3, max_hist=10, distance_threshold=.03)
@@ -34,7 +39,7 @@ class Tracker:
         if not self.tracklet_generated:
             self.tracklet_saver.write_tracklet()
             self.tracklet_generated = True
-            print '---------tracklet exported------------------'
+            rospy.logwarn('---------tracklet exported------------------')
             #rospy.signal_shutdown('Tracklet exported')
 
     def save_gen_tracklet(self, frameid, scale, trans, rot): #, timestamp, bbox):
@@ -57,7 +62,7 @@ class Tracker:
         if bboxtime > self.tracklet_lasttimestamp:
             for m in markerarry:
 
-                scale = np.asarray([m.scale.x,m.scale.y,m.scale.z])
+                scale = np.asarray([m.scale.z,m.scale.y,m.scale.x]) #h,w,l
                 trans = np.asarray([m.pose.position.x,m.pose.position.y,m.pose.position.z])
 
                 rotq = (m.pose.orientation.x,m.pose.orientation.y,m.pose.orientation.z,m.pose.orientation.w)
@@ -117,7 +122,7 @@ class Tracker:
         for i in range(self.tracked_targets.shape[0]):
             tx, ty, tz, w, l, rz,  h, rx, ry = self.tracked_targets[i,:]
             # print(tx, ty, w, l, rz, tz, h, rx, ry)
-            scale = np.asarray([w, l, h])
+            scale = np.asarray([h, w, l])
             trans = np.asarray([tx, ty, tz])
             rot = np.asarray([rx, ry, rz])
 
@@ -142,6 +147,7 @@ class Tracker:
                 print 'lidar time ', self.lidar_lasttimestamp
 
     def handle_bbox_msg(self,msg):
+        self.bboxframeindex += 1
         if (not self.tracklet_generated) and (len(msg.markers)>0):
             #print('time0', 'time1')
             #print(msg.markers[0].header.stamp.to_nsec())
@@ -210,7 +216,7 @@ class Tracker:
 
     def startlistening(self):
         rospy.init_node('tracker', anonymous=True)
-        #rospy.Subscriber('/image_raw', Image, self.handle_image_msg) # for frame number
+        rospy.Subscriber('/image_raw', Image, self.handle_image_msg) # for frame number
         rospy.Subscriber('/velodyne_points', PointCloud2, self.handle_lidar_msg) # for timing data
         rospy.Subscriber('/velodyne_points', PointCloud2, self.handle_lidar_msg) # for timing data
         rospy.Subscriber("/bbox", MarkerArray, self.handle_bbox_msg)
@@ -219,5 +225,10 @@ class Tracker:
         rospy.spin()
 
 if __name__ == "__main__":
-    tracker = Tracker()
+    parser = argparse.ArgumentParser(description='tracker')
+    parser.add_argument('-n', '--name', type=str, nargs='?', default='tracklet',
+                        help='the name of tracklet xml')
+    args = parser.parse_args(rospy.myargv()[1:])
+
+    tracker = Tracker(args.name)
     tracker.startlistening()

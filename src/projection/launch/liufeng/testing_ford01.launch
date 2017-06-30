@@ -4,7 +4,7 @@
     <arg name="rate" default="0.2" />
 
     <node name="detector" pkg="detector" type="pipeline.py"/>
-    <node name="tracker" pkg="tracker" type="tracker.py"/>
+    <node name="tracker" pkg="tracker" type="tracker.py" args="-n ford01"/>
     <node name="projection" pkg="projection" type="visualize_result.py" args="$(find projection)/scripts/ost_new.yaml"/>
 
 	<node name="velodyne" pkg="velodyne_pointcloud" type="cloud_node" args="">

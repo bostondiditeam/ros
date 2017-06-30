@@ -88,13 +88,13 @@ class Projection:
         self.imgOutput.publish(bridge.cv2_to_imgmsg(out_img, 'bgr8'))
 
     def handle_bbox_msg(self, bbox_msg):
-        if self.camera_image == None:
+        if self.camera_image is None:
             return
         self.mv3d_bbox = bbox_msg.markers
         self._draw_bblox_image()
 
     def handle_bbox_final_msg(self, bbox_final_msg):
-        if self.camera_image == None:
+        if self.camera_image is None:
             return
         self.kalman_bbox = bbox_final_msg.markers
         self._draw_bblox_image()

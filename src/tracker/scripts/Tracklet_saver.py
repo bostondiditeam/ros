@@ -16,11 +16,10 @@ import sys
 from datetime import datetime
 
 class Tracklet_saver():
-    def __init__(self, dir_path):
+    def __init__(self, dir_path, tracklet_name, exist_ok=False):
         # check if the tracklet file already exist, if yes, exit and print error message.
-        file_path = os.path.join(dir_path, 'tracklet_labels_pred_tracker_{}.xml'.format(datetime.now().strftime('%Y%m%d-%H%M%S')
-))
-        if os.path.isfile(file_path):
+        file_path = os.path.join(dir_path, tracklet_name + '.xml')
+        if exist_ok==False and os.path.isfile(file_path):
             sys.stderr.write("Error: The tracklet file %s already exists, change file name before prediction.\n" % file_path)
             exit(-1)
         else:
