@@ -230,8 +230,7 @@ def associate_detections_to_trackers(
     for d, det in enumerate(detections):
         for t, trk in enumerate(trackers):
             distance_matrix[d, t] = distance(det, trk)
-            print('distance of new det:{} to tracker {} = {}'.format(
-                d, t, distance_matrix[d, t]))
+            # print('distance of new det:{} to tracker {} = {}'.format(d, t, distance_matrix[d, t]))
 
     # warnings.warn(str(distance_matrix))
     # warnings.warn('tracking')
@@ -289,6 +288,9 @@ class Sort(object):
 
         NOTE: The number of objects returned may differ from the number of detections provided.
         """
+        # reset
+        if self.frame_count > self.min_hits and len(self.trackers)==0:
+            self.frame_count = 0
         self.frame_count += 1
         # get predicted locations from existing trackers.
         trks = np.zeros((len(self.trackers), 7))
@@ -340,14 +342,22 @@ class Sort(object):
             d_attr = trk.unused_box_attrs
             # print('printing d_attr')
             # print(d_attr)
-            if((trk.time_since_update < 1) and (trk.hit_streak >= self.min_hits or self.frame_count <= self.min_hits)):
+
+            # if((trk.time_since_update < 1) and (trk.hit_streak >= self.min_hits or self.frame_count <= self.min_hits)):
+            if((trk.hits >= self.min_hits or self.frame_count <= self.min_hits)):
+
                 # +1 as MOT benchmark requires positive
                 ret.append(np.concatenate((d, [trk.id + 1])).reshape(1, -1))
                 ret_attrs.append(d_attr)
             i -= 1
             # remove dead tracklet
             if(trk.time_since_update > self.max_age):
+                print('remove :{}'.format(i))
                 self.trackers.pop(i)
+            elif self.frame_count > self.min_hits and trk.hits*1./self.frame_count<0.3:
+                print('remove :{}'.format(i))
+                self.trackers.pop(i)
+
         if(len(ret) > 0):
             # return np.concatenate(ret)
             # last column is track id
@@ -389,4 +399,15 @@ class Sort(object):
 
 
 if __name__ == '__main__':
-    pass
+    # default params (min_hits=3, max_hist=10, distance_threshold=.03)
+    sort = Sort(min_hits=5, max_age=15, distance_threshold=.06)
+
+    for i in range(120):
+        detections = np.load('./dump/detections_%05d.npy'%(i))
+        # if i ==9:
+        #     detections = np.load('./dump/detections_%05d.npy'%(i-1))
+        if i == 20:
+            detections = np.asarray([])
+        tracked_targets, tracked_ids = sort.update(detections)
+        print('-------------%d----------------------' %i)
+        print('input:{}\n\ntargets:{}\n\nids:{}\n\n'.format(detections,tracked_targets, tracked_ids) )
