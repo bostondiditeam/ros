@@ -11,7 +11,21 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  sensor_msgs
+  std_msgs
+  image_transport
+  cv_bridge
+  pcl_conversions
+  pcl_ros
+  message_filters
+  visualization_msgs
 )
+
+find_package(PCL 1.7 REQUIRED)
+
+include_directories(${PCL_INCLUDE_DIRS})
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -105,7 +119,15 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES detector
-#  CATKIN_DEPENDS roscpp rospy std_msgs
+ CATKIN_DEPENDS roscpp rospy std_msgs
+    sensor_msgs 
+    std_msgs 
+    image_transport 
+    cv_bridge 
+    pcl_conversions
+    pcl_ros
+    message_filters
+    visualization_msgs
 #  DEPENDS system_lib
 )
 
@@ -118,6 +140,7 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
@@ -197,3 +220,9 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+add_executable(pipeline_node src/pipeline.cpp)
+target_link_libraries(pipeline_node 
+                    ${catkin_LIBRARIES} 
+                    ${OpenCV_LIBRARIES}
+                    ${PCL_LIBRARIES})
