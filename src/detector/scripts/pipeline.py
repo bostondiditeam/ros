@@ -24,10 +24,8 @@ from cv_bridge import CvBridge, CvBridgeError
 import message_filters
 
 import xmlrpclib
-import py2utils
 import data
 from net.processing.boxes3d import boxes3d_decompose
-
 
 rpc=xmlrpclib.ServerProxy('http://localhost:8080/')
 
@@ -170,17 +168,17 @@ def sync_callback(msg1, msg2):
     print("use {:.4f} seconds for publish MarkerArray".format(time_check_7 - time_check_6))
     print("use {:.4f} seconds for total".format(time_check_7 - time_check_0))
 
-    if 0:   # if show the images for debug
-        top_image = py2utils.draw_top_image(top)
-        rgb_image = py2utils.draw_box3d_on_camera(rgb, np.array(boxes3d))
-        rgb_image = cv2.resize(rgb_image,(rgb_image.shape[1]//2, rgb_image.shape[0]//2))
-        top_image_height = rgb_image.shape[0]
-        top_image_width = top_image.shape[1] * rgb_image.shape[0] // top_image.shape[0]
-        top_image = py2utils.draw_box3d_on_top(top_image, boxes3d)
-        top_image = cv2.resize(top_image,(top_image_width, top_image_height))
-        show_image = np.concatenate((top_image, rgb_image), axis=1)
-        cv2.imshow("top", show_image)
-        cv2.waitKey(1)
+    # if 0:   # if show the images for debug
+    #     top_image = py2utils.draw_top_image(top)
+    #     rgb_image = py2utils.draw_box3d_on_camera(rgb, np.array(boxes3d))
+    #     rgb_image = cv2.resize(rgb_image,(rgb_image.shape[1]//2, rgb_image.shape[0]//2))
+    #     top_image_height = rgb_image.shape[0]
+    #     top_image_width = top_image.shape[1] * rgb_image.shape[0] // top_image.shape[0]
+    #     top_image = py2utils.draw_box3d_on_top(top_image, boxes3d)
+    #     top_image = cv2.resize(top_image,(top_image_width, top_image_height))
+    #     show_image = np.concatenate((top_image, rgb_image), axis=1)
+    #     cv2.imshow("top", show_image)
+    #     cv2.waitKey(1)
 
 if __name__ == '__main__':
     rospy.init_node('detect_node')
