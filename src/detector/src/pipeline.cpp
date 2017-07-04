@@ -26,18 +26,23 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/filters/passthrough.h>
 
+#include "detector/utils.hpp"
 
 ros::Publisher cloud_pub;
 ros::Publisher image_pub;
 ros::Publisher marker_pub;
+
+RPCPredictor g_rpc_predictor;
 
 /**
  * to do
  * how 
  * 
  */
-void point_cloud_2_top(const sensor_msgs::PointCloud2ConstPtr& point_ptr,
-                       cv::Mat & output_top_image,
+bool point_cloud_2_top(const sensor_msgs::PointCloud2ConstPtr& point_ptr,
+//                        cv::Mat & output_top_image,
+                       float * top_image,
+                       int top_image_lenght,
                        double res = 0.1, 
                        double zres = 0.3, 
                        double left_most = -10,
@@ -47,11 +52,48 @@ void point_cloud_2_top(const sensor_msgs::PointCloud2ConstPtr& point_ptr,
                        double bottom_most = -2,
                        double upper_most = 2
 ){
+    
+    
+    
+    // top image x, y, z
+    // left right -> x
+    // front back -> y
+    int x_max = (right_most - left_most) / res + 1;
+    int y_max = (front_most - back_most) / res + 1;
+    int z_max = (upper_most - bottom_most) / res + 1;
+    
+    // only work with gcc
+    int total_len = (x_max ) * (y_max  ) * (z_max );
+    
+    if( total_len != top_image_lenght){
+        std::cout << "total_len != top_image_lenght" <<std::endl;
+        return false;
+    }
+    
+    for(int i=0; i<total_len; i++){
+        top_image[i] = 0;
+    }
+    
+    
+/*    
+    float top_image2[x_max + 1][y_max + 1][z_max + 1];
+    
+    for(int i=0; i<= x_max; i++){
+        for(int j=0; j<=y_max; j++){
+            for(int k = 0; k<=z_max; k++){
+                
+            }
+        }
+    }*/
+
+    
     pcl::PointCloud<pcl::PointXYZI> cloud;
     pcl::fromROSMsg(*point_ptr, cloud);
     
 //     pcl::PointCloud<pcl::PointXYZ>::Ptr source_cloud (new pcl::PointCloud<pcl::PointXYZ> (cloud));
     pcl::PointCloud<pcl::PointXYZI>::Ptr source_cloud(&cloud);
+    
+    std::cout  << "before pass cloud.point.size = " << cloud.points.size() <<std::endl;
     
     pcl::PassThrough<pcl::PointXYZI> pass;
     pass.setInputCloud (source_cloud);
@@ -67,6 +109,25 @@ void point_cloud_2_top(const sensor_msgs::PointCloud2ConstPtr& point_ptr,
     pass.setFilterLimits(back_most, front_most);
     //pass.setFilterLimitsNegative (true);
     pass.filter (*source_cloud);
+    
+    int after_pass_size = cloud.points.size();
+    
+    int x = 0;
+    int y = 0;
+    int z = 0;
+    int intensify = 0;
+    pcl::PointXYZI *point = NULL;
+    
+    // here is differ from 
+    for(int i=0; i<after_pass_size; i++){
+        point = &cloud.points[i];
+        
+        int x_image = (point->y - left_most) / res;
+        int y_image = (point->x - back_most) / res;
+        int z_image = (point->z - bottom_most) / zres;
+    }
+    
+    std::cout  << "after pass cloud.point.size = " << cloud.points.size() <<std::endl;
 
     pcl::visualization::PCLVisualizer viewer ("Matrix transformation example");
 
@@ -75,7 +136,7 @@ void point_cloud_2_top(const sensor_msgs::PointCloud2ConstPtr& point_ptr,
     // We add the point cloud to the viewer and pass the color handler
     viewer.addPointCloud (source_cloud, source_cloud_color_handler, "original_cloud");
 
-    viewer.addCoordinateSystem (1.0, "original_cloud", 0);
+//     viewer.addCoordinateSystem (1.0, "original_cloud", 0);
     viewer.setBackgroundColor(0.05, 0.05, 0.05, 0); // Setting background to a dark grey
 //     viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 2, "original_cloud");
 
@@ -84,10 +145,6 @@ void point_cloud_2_top(const sensor_msgs::PointCloud2ConstPtr& point_ptr,
     while (!viewer.wasStopped ()) { // Display the visualiser until 'q' key is pressed
         viewer.spinOnce ();
     }
-    
-  
-    
-    
 }
 void draw_top_image();
 void msg_to_arr();
@@ -129,13 +186,93 @@ void sync_callback(const sensor_msgs::ImageConstPtr& image_ptr,
     
     cv::Mat camera_image = cv_bridge::toCvCopy(image_ptr, "bgr8")->image;
     printf("camera_image width = %d, height = %d\n", camera_image.cols, camera_image.rows);
+
     
-    cv::Mat top;
-    point_cloud_2_top(pointcloud2_ptr, top);
+    double res = 0.1;
+    double zres = 0.3; 
+    double left_most = -10;
+    double right_most = 10;
+    double back_most = -10;
+    double front_most = 10;
+    double bottom_most = -2;
+    double upper_most = 2;
+    int x_max = (right_most - left_most) / res ;
+    int y_max = (front_most - back_most) / res ;
+    int z_max = (upper_most - bottom_most) / zres ;
+//     x_max = 500;
+//     y_max = 300;
+//     z_max = 15;
+    int total_len = (x_max ) * (y_max )  * (z_max + 2);
+    float * top_image = new float[total_len];
     
     
-    cloud_pub.publish(*pointcloud2_ptr);
-    image_pub.publish(*image_ptr);
+    // convert pcl_msg to pointcloud
+    pcl::PointCloud<pcl::PointXYZI> cloud;
+    pcl::fromROSMsg(*pointcloud2_ptr, cloud);
+    float float_cloud_data[cloud.points.size()][4];
+    for(int i=0; i<cloud.points.size(); i++){
+        pcl::PointXYZI * pt = &(cloud.points[i]);
+        float_cloud_data[i][0] = pt->x;
+        float_cloud_data[i][1] = pt->y;
+        float_cloud_data[i][2] = pt->z;
+        float_cloud_data[i][3] = pt->intensity;
+    }
+    // have to be the same with the config.py
+    createTopMaps((void*)float_cloud_data, 
+                  cloud.points.size(),
+                  (void*)top_image, 
+                  -10,
+                  10,
+                  -10, 
+                  10,
+                  -2, 
+                  2,
+                  0.1,
+                  0.1,
+                  0.3,
+                  x_max,
+                  y_max,
+                  z_max
+                  
+    );
+//     memset(top_image)
+    
+//     point_cloud_2_top(pointcloud2_ptr, top_image, total_len);
+    
+    cv::Mat cv_rgb_image = cv_bridge::toCvCopy(image_ptr, "rgb8")->image;
+    //　not include right bottom point
+    cv::Rect roi(cv::Point(0, 400), cv::Point(cv_rgb_image.cols, cv_rgb_image.rows - 100));
+
+    
+    std::cout << "before crop, cv_rgb_image.size = " << cv_rgb_image.size() << std::endl;
+    cv_rgb_image = cv_rgb_image(roi);
+    std::cout << "after crop, cv_rgb_image.size = " << cv_rgb_image.size() << std::endl;
+
+    float * rgb_image = new float[cv_rgb_image.rows * cv_rgb_image.cols * 3];
+    int rgb_counter = 0;
+    for(int i=0; i<cv_rgb_image.rows; i++){
+        for(int j=0; j<cv_rgb_image.cols; j++){
+            rgb_image[rgb_counter++] = cv_rgb_image.at<cv::Vec3b>(i, j)[0];
+            rgb_image[rgb_counter++] = cv_rgb_image.at<cv::Vec3b>(i, j)[1];
+            rgb_image[rgb_counter++] = cv_rgb_image.at<cv::Vec3b>(i, j)[2];
+        }
+    }
+    
+    
+   
+//    g_rpc_predictor.predict(top_image, rgb_image);
+   visualization_msgs::MarkerArray markers = g_rpc_predictor.getmarkers();
+   if(markers.markers.size() > 0){
+        marker_pub.publish(markers);
+   }
+    
+    delete [] rgb_image;
+    delete [] top_image;
+    
+    ros::Duration dt = ros::Time::now() - func_start;
+    std::cout << "sync dt = " << dt.toSec() << std::endl << std::endl;
+//     cloud_pub.publish(*pointcloud2_ptr);
+//     image_pub.publish(*image_ptr);
 }
 
 int main(int argc, char ** argv){
