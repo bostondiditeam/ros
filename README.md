@@ -22,24 +22,25 @@ Click [here](./docs/rosbag_exploration.ipynb) to look at the Jupyter notebook to
 # ROS quick tutorial
 Click [here](./docs/ros_quick_tutorial.md) for a quick tutorial of ROS.
 
-1. create the ros workspace in the ros dir
+1. Run the python 3 predict service
+```
+$ python ./run_model.py -m ped 
+```
+
+2. create the ros workspace in the ros dir
 ```
 $ catkin_make
 ```
-2. source ros env
+3. source ros env
 ```
 $ source devel/setup.bash
-```
-3. Run the python 3 rpc predict service
-```
-$ python3 src/detector/scripts/predict_rpc.py <<tag>>
 ```
 
 the tag is the tag for taining weights directory name, which tag is your training tag.
 
 4. run all from ros launch
 ```
-roslaunch src/projection/launch/liufeng_visualize.launch bag:=<<bag>> rate:=<<rate>>
+roslaunch ped.launch  bag:=ped_test rate:=0.3 bag_DIR:=/media/stu/hdd1_1t/competition_data/didi_dataset/round2/test_ped
 ```
 
 if you run the launche file
@@ -78,26 +79,4 @@ and <<bag>> and <<rate>> is defined in the launch xml
     <node name="rviz" pkg="rviz" type="rviz" args="-d $(find projection)/launch/config-result.rviz"  />
 </launch>
 
-```
-
-
-# ROS Nodes
-
-## [detector]
-
-Run the python 3 rpc predict service
-```
-$ cd script
-$ python3 predict_rpc.py
-```
-
-use this command to run before ros play didi test bag
-```
-$ rosrun detector pipeline.py
-```
-
-## [tracker]
-use this command to run before ros play didi test bag
-```
-$ rosrun tracker tracker.py
 ```
