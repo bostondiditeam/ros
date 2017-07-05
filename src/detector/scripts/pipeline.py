@@ -120,7 +120,8 @@ def sync_callback(msg1, msg2):
 
     time_check_0 = time.time()
     arr = msg_to_arr(msg2)
-    lidar = np.array([[item[0], item[1], item[2], item[3]/255.] for item in arr],dtype=np.float32)
+    lidar = np.c_[arr['x'],arr['y'],arr['z'],arr['intensity']/255.]
+
     time_check_1 = time.time()
 
     camera_image = bridge.imgmsg_to_cv2(msg1, "bgr8")
