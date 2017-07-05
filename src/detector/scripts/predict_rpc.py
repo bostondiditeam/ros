@@ -1,14 +1,16 @@
+import os
 from twisted.web import xmlrpc, server
 import numpy as np
 import argparse
-import os
-os.environ['DISPLAY']=':0'
+
 import numpy as np
 import cv2
 import sys
 import time
 
 sys.path.append(os.path.join(sys.path[0],"../MV3D/src"))
+
+from config import *
 from config import cfg
 import mv3d
 import data
@@ -16,23 +18,17 @@ from net.processing.boxes3d import boxes3d_decompose
 from data import preprocess
 
 
-parser = argparse.ArgumentParser(description='predict_rpc')
-parser.add_argument('-n', '--tag', type=str, nargs='?', default='unknown_tag',
-                    help='set weights tag, which is your training tag')
-args = parser.parse_args()
-print('\n\n{}\n\n'.format(args))
-tag = args.tag
-if tag == 'unknown_tag':
-    tag = input('Enter log tag : ')
-    print('\nSet log tag :"%s" ok !!\n' % tag)
 
 print("init the network")
-LIDAR_TOP_SHAPE = (500, 300, 15) # to be decided (400, 400, 8)
+Xn = int((TOP_X_MAX - TOP_X_MIN) / TOP_X_DIVISION)
+Yn = int((TOP_Y_MAX - TOP_Y_MIN) / TOP_Y_DIVISION)
+channel = int((TOP_Z_MAX - TOP_Z_MIN) / TOP_Z_DIVISION)+2
+LIDAR_TOP_SHAPE = (Xn, Yn, channel) # to be decided (400, 400, 8)
 LIDAR_FRONT_SHAPE = (0,)  # to be decided.
 RGB_SHAPE = (596, 1368, 3)  # to be decided (1096, 1368, 3)
 
 
-predict = mv3d.Predictor(LIDAR_TOP_SHAPE, LIDAR_FRONT_SHAPE, RGB_SHAPE, log_tag=tag)
+predict = mv3d.Predictor(LIDAR_TOP_SHAPE, LIDAR_FRONT_SHAPE, RGB_SHAPE, log_tag=cfg.OBJ_TYPE)
 front = np.zeros((0, ), dtype=np.float32)
 
 def testCase():

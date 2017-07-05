@@ -128,41 +128,35 @@ class Tracker:
         self.total_time += cycle_time
         self.num_updates += 1.
 
-        self.ros_publish_final_bbox()
 
-        print('kalman update')
-        for i in range(self.tracked_targets.shape[0]):
-            tx, ty, tz, w, l, rz,  h, rx, ry = self.tracked_targets[i,:]
-            # print(tx, ty, w, l, rz, tz, h, rx, ry)
-            scale = np.asarray([w, l, h])
-            trans = np.asarray([tx, ty, tz])
-            rot = np.asarray([rx, ry, rz])
+        # print('kalman update')
+        # for i in range(self.tracked_targets.shape[0]):
+        #     tx, ty, tz, w, l, rz,  h, rx, ry = self.tracked_targets[i,:]
+        #     # print(tx, ty, w, l, rz, tz, h, rx, ry)
+        #     scale = np.asarray([w, l, h])
+        #     trans = np.asarray([tx, ty, tz])
+        #     rot = np.asarray([rx, ry, rz])
 
             # self.kalman_update(self.cameraframeindex, scale, trans, rot)
-            self.save_gen_tracklet(self.cameraframeindex, scale, trans, rot)
+            # self.save_gen_tracklet(self.cameraframeindex, scale, trans, rot)
 
-        print("tracking {} objects at time {}, processing time {}, avg processing time {}"
-              .format(len(self.tracked_targets), self.current_time,
-                      cycle_time, self.total_time/self.num_updates))
+        # print("tracking {} objects at time {}, processing time {}, avg processing time {}"
+        #       .format(len(self.tracked_targets), self.current_time,
+        #               cycle_time, self.total_time/self.num_updates))
 
     def handle_image_msg(self, msg):
         self.cameraframeindex += 1
 
     def handle_lidar_msg(self, msg):
-        if (not self.tracklet_generated):
-            timestamplidar = msg.header.stamp.to_nsec()
-            if timestamplidar < self.lidar_lasttimestamp: # rosplay loops
-                print('generating tracklet')
-                self.write_final_tracklet_xml()
-            else:
-                self.lidar_lasttimestamp = timestamplidar
-                print('lidar time ', self.lidar_lasttimestamp)
+
+        self.ros_publish_final_bbox()
+        rospy.logerr('pulished bbox: time: {}'.format(time.time()))
 
     def handle_bbox_msg(self,msg):
         # if (not self.tracklet_generated) and (len(msg.markers)>0):
         #print('time0', 'time1')
         #print(msg.markers[0].header.stamp.to_nsec())
-        rospy.logerr('len(msg.markers)  = {}'.format(len(msg.markers)))
+        # rospy.logerr('len(msg.markers)  = {}'.format(len(msg.markers)))
 
 
         # print 'bbox time  ', self.tracklet_lasttimestamp, ', Total bbox in this frame = ', len(msg.markers)
@@ -215,7 +209,7 @@ class Tracker:
 
     def ros_publish_final_bbox(self):
         markerArray = MarkerArray()
-        for i in range(self.tracked_targets.shape[0]):
+        for i in range(len(self.tracked_targets)):
             tx, ty, tz, w, l, rz,  h, rx, ry = self.tracked_targets[i,:]
             m = Marker()
             m.type = Marker.CUBE
@@ -235,7 +229,6 @@ class Tracker:
     def startlistening(self):
         rospy.init_node('tracker', anonymous=True)
         #rospy.Subscriber('/image_raw', Image, self.handle_image_msg) # for frame number
-        rospy.Subscriber('/velodyne_points', PointCloud2, self.handle_lidar_msg) # for timing data
         rospy.Subscriber('/velodyne_points', PointCloud2, self.handle_lidar_msg) # for timing data
         rospy.Subscriber("/bbox", MarkerArray, self.handle_bbox_msg)
         self.pub = rospy.Publisher("bbox_final", MarkerArray, queue_size=1)
