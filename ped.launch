@@ -18,5 +18,5 @@
         <param name="calibration" value="$(find velodyne_pointcloud)/params/32db.yaml" />
     </node>
     <node name="rosbag" pkg="rosbag" type="play" args="-r $(arg rate) -l --clock $(arg bag_DIR)/$(arg bag).bag"/>
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find projection)/launch/config-result.rviz"  />
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find projection)/launch/ped-config-result.rviz"  />
 </launch>
