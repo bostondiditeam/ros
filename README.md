@@ -1,14 +1,13 @@
 # Purpose
 This document describes the final submitted codes for team **"In It To Win It"** for the [Udacity Self-Driving Car Challenge 2017](https://challenge.udacity.com/).
 
-# System Settings and Dependencies
+# Main packages required
 * Ubuntu 14.04
 * ROS Indigo
-* ros-indigo-velodyne
 * Python3.5.3(For MV3D neural nets)
 * Python2.7.13(For ROS node related)
-* Tensorflow-1.1
-* Keras
+* Tensorflow-1.1 (For python3.5)
+* Keras (For python3.5)
 
 
 # Background and Overview
@@ -94,6 +93,13 @@ checkpoint/
 
 ```
 
+## make catkin packages:
+```
+cd src
+catkin_create_pkg bbox_driver rospy roscpp
+catkin_create_pkg ped_tracker rospy roscpp
+```
+
 ## create the ros workspace in the ros dir
 ```
 $ catkin_make
@@ -107,6 +113,8 @@ $ source devel/setup.bash
 Python 2 dependency(ROS node related.):
 
 ```
+sudo apt-get install ros-indigo-velodyne
+
 pip install em
 pip install numpy
 pip install opencv-python
@@ -121,9 +129,9 @@ pip install sklearn
 
 For more dependencies, please refer to: 
 https://docs.google.com/document/d/1uY3EpkE5j5dA8FoAxh0FGwRQ9Ly1Y25LjobJo8I1Rgk/edit
-or refer to our yaml files. 
+or refer to our yaml files here:  
 
-### go to catkin_ws/src/detector/MV3D/src directory
+## Go to catkin_ws/src/detector/MV3D/src directory
 ```
 # sudo chmod +x ./make.sh (if cannot make)
 ./make.sh
@@ -133,10 +141,11 @@ or refer to our yaml files.
 If you encounter issues running the ./make.sh script, please go to [here](./docs/README_MV3D.md) for reference. 
 
 
-1. Run the python 3(Please note it should be python 3, for other parts, we use python2.7) predict service
+1. Run MV3D net. (Please note it should be python 3 for running MV3D net, for other parts, we use python2.7) predict 
+service.
 
 ```
-cd catkin_ws/src/detector/scripts/run_model.py
+cd ros/src/detector/scripts/
 # for pedestrain detection, run the following line
 $ python ./run_model.py -m ped
 # for car detection, run the following line
@@ -144,7 +153,7 @@ $ python ./run_model.py -m car
 
 ```
 
-4. run all from ros launch
+4. run all from ros launch(For launching all related ros nodes)
 ```
 # please change the bag_DIR and bag parameters according to your local environment.
 # for pedestrain detection, run the following roslaunch
