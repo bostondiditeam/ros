@@ -75,7 +75,7 @@ class Tracker:
         self.detected_bboxes = None
         self.latest_detection_time = None
 
-        self.mot_tracker = Sort(max_age=3, 
+        self.mot_tracker = Sort(max_age=3,
                                 min_hits=6, 
                                 iou_threshold=0.1, 
                                 max_time_elapsed=2)
@@ -91,7 +91,7 @@ class Tracker:
         rospy.Subscriber("bbox/detections", BboxArray, self.handle_bbox_msg)
         time3 = time.time()
         print('tracker node initialzed')
-        rospy.Timer(rospy.Duration(0.1), self.publish_predictions)
+        rospy.Timer(rospy.Duration(0.05), self.publish_predictions)
         time4 = time.time()
         rospy.logerr('t1: {}'.format(time2-time1))
         rospy.logerr('t2: {}'.format(time3 - time2))
@@ -106,14 +106,15 @@ class Tracker:
         self.latest_detection_time = rospy.get_rostime()
         print("Bboxes detected at", self.latest_detection_time.to_sec())
         self.detected_bboxes = bbox_msg
-        rospy.logerr('bbox_msg={}'.format(bbox_msg))
+        # rospy.logerr('bbox_msg={}'.format(bbox_msg))
 
 
 
     def publish_predictions(self, event):
         # wait until first detection
         # print('enter here? ', time.time())
-        if (not self.latest_detection_time) or (not self.detected_bboxes):
+        rospy.logerr('before return: {}'.format(time.time()))
+        if self.detected_bboxes is None:
             return
 
         # if no new detections since last call :
@@ -153,11 +154,12 @@ class Tracker:
             else :
                 self.track_count[trk_id] += 1
 
-            rospy.logerr('self.track_count[trk_id]={} self.min_detections:={}'.format(self.track_count[trk_id],
-                                                                                      self.min_detections))
+            # rospy.logerr('self.track_count[trk_id]={} self.min_detections:={}'.format(self.track_count[trk_id],
+            #                                                                           self.min_detections))
             if self.track_count[trk_id] < self.min_detections:
-                rospy.logerr('empty or no')
                 continue
+                # rospy.logerr('empty or no')
+
             bbox = Bbox()
             bbox.x, bbox.y, bbox.z = track[0:3]
             bbox.h = track[4]
