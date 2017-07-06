@@ -164,24 +164,6 @@ roslaunch car.launch  bag:=ford01 rate:=0.3 bag_DIR:=/media/stu/hdd1_1t/competit
 ```
 
 
-## 1. Run detector node: 
-
-### A. for pedestrian obstacle
- 
-run ROS launch file for pedestrian
- 
-```
-roslaunch launch/[TO-ADD]
-```
-
-### B. for car obstacle
-
-run ROS launch file for cars
- 
-```
-roslaunch launch/[TO-ADD]
-```
-
 
 # Output
 The final bounding box output will be published by the `tracker` node in the form of `PoseArray` message for obstacle position and orientation.
