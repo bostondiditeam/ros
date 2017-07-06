@@ -8,6 +8,7 @@ import time
 import math
 import numpy as np
 import tf
+import argparse
 
 #os.system('roslaunch velodyne_pointcloud 32e_points.launch &')
 sys.path.append(os.path.join(sys.path[0],"../MV3D/src"))
@@ -36,7 +37,7 @@ import xmlrpclib
 import data
 from net.processing.boxes3d import boxes3d_decompose
 
-
+model_name =None
 rpc=xmlrpclib.ServerProxy('http://localhost:8080/')
 
 # Instantiate CvBridge
@@ -123,8 +124,8 @@ def sync_callback(msg1, msg2):
     # msg1: /image_raw   # msg2: /velodyne_points: velodyne_points
     timestamp1 = msg1.header.stamp.to_nsec()
     timestamp2 = msg2.header.stamp.to_nsec()
-    print('=====image_callback: msg : seq=%d, timestamp=%19d' % (msg1.header.seq, timestamp1))
-    print('=====velodyne_callback: msg : seq=%d, timestamp=%19d' % (msg2.header.seq, timestamp2))
+    # print('=====image_callback: msg : seq=%d, timestamp=%19d' % (msg1.header.seq, timestamp1))
+    # print('=====velodyne_callback: msg : seq=%d, timestamp=%19d' % (msg2.header.seq, timestamp2))
 
     time_check_0 = time.time()
     arr = msg_to_arr(msg2)
@@ -146,50 +147,57 @@ def sync_callback(msg1, msg2):
     boxes3d = rpc.predict()
     time_check_6 = time.time()
 
-    # publish (boxes3d) to tracker_node
-    markerArray = MarkerArray()
-    bbox_arr = BboxArray()
-    now = rospy.get_rostime()
-    bbox_arr.header.stamp = now
-    if len(boxes3d) > 0:
-        translation, size, rotation = boxes3d_decompose(np.array(boxes3d))
-        for i in range(len(boxes3d)):
-            m = Marker()
-            m.type = Marker.CUBE
-            m.header.frame_id = "velodyne"
-            m.header.stamp = msg2.header.stamp
-            # translation-- H,W,L  but m.scalen: l,w,h
-            m.scale.x, m.scale.y, m.scale.z = size[i][2],size[i][1],size[i][0]
-            m.pose.position.x, m.pose.position.y, m.pose.position.z = \
-                translation[i][0], translation[i][1], translation[i][2]
+    if model_name == 'car':
+        # publish (boxes3d) to tracker_node
+        markerArray = MarkerArray()
+        if len(boxes3d) > 0:
+            translation, size, rotation = boxes3d_decompose(np.array(boxes3d))
+            for i in range(len(boxes3d)):
+                m = Marker()
+                m.type = Marker.CUBE
+                m.header.frame_id = "velodyne"
+                m.header.stamp = msg2.header.stamp
+                # translation-- H,W,L  but m.scalen: l,w,h
+                m.scale.x, m.scale.y, m.scale.z = size[i][2],size[i][1],size[i][0]
+                m.pose.position.x, m.pose.position.y, m.pose.position.z = \
+                    translation[i][0], translation[i][1], translation[i][2]
 
-            quaternion = tf.transformations.quaternion_from_euler(rotation[i][0], rotation[i][1], rotation[i][2])
-            m.pose.orientation.x, m.pose.orientation.y, m.pose.orientation.z, m.pose.orientation.w = \
-                quaternion[0], quaternion[1], quaternion[2], quaternion[3],
-            # m.pose.orientation.x, m.pose.orientation.y, m.pose.orientation.z, m.pose.orientation.w = \
-            #     rotation[i][0], rotation[i][1], rotation[i][2], 1.
-            m.color.a, m.color.r, m.color.g, m.color.b = \
-                0.5, 1.0, 1.0, 0.0
-            markerArray.markers.append(m)
+                quaternion = tf.transformations.quaternion_from_euler(rotation[i][0], rotation[i][1], rotation[i][2])
+                m.pose.orientation.x, m.pose.orientation.y, m.pose.orientation.z, m.pose.orientation.w = \
+                    quaternion[0], quaternion[1], quaternion[2], quaternion[3],
+                # m.pose.orientation.x, m.pose.orientation.y, m.pose.orientation.z, m.pose.orientation.w = \
+                #     rotation[i][0], rotation[i][1], rotation[i][2], 1.
+                m.color.a, m.color.r, m.color.g, m.color.b = \
+                    0.5, 1.0, 1.0, 0.0
+                markerArray.markers.append(m)
 
-            #bbox_arr
-            bbox = Bbox()
-            bbox.header.stamp = msg2.header.stamp
-            bbox.x, bbox.y, bbox.z = translation[i]
-            bbox.h, bbox.w, bbox.l = size[i]
-            bbox.score=1.
-            bbox_arr.bboxes.append(bbox)
-    pub.publish(markerArray)
-    pub_detections.publish(bbox_arr)
-    time_check_7 = time.time()
-    print("use {:.4f} seconds for read lidar to numpy".format(time_check_1 - time_check_0))
-    print("use {:.4f} seconds for read image to numpy".format(time_check_2 - time_check_1))
-    print("use {:.4f} seconds for crop_image".format(time_check_3 - time_check_2))
-    print("use {:.4f} seconds for lidar_to_top".format(time_check_4 - time_check_3))
-    print("use {:.4f} seconds for save top.npy and rgb.npy".format(time_check_5 - time_check_4))
-    print("use {:.4f} seconds for rpc predict: boxes len={}".format(time_check_6 - time_check_5, len(boxes3d)))
-    print("use {:.4f} seconds for publish MarkerArray".format(time_check_7 - time_check_6))
-    print("use {:.4f} seconds for total".format(time_check_7 - time_check_0))
+        pub.publish(markerArray)
+
+    elif model_name == 'ped':
+        # publish (boxes3d) to tracker_node
+        bbox_arr = BboxArray()
+        bbox_arr.header.stamp = msg2.header.stamp
+        if len(boxes3d) > 0:
+            translation, size, rotation = boxes3d_decompose(np.array(boxes3d))
+            for i in range(len(boxes3d)):
+                # bbox_arr
+                bbox = Bbox()
+                bbox.x, bbox.y, bbox.z = translation[i]
+                bbox.h, bbox.w, bbox.l = size[i]
+                bbox.score = 1.
+                bbox_arr.bboxes.append(bbox)
+        pub_detections.publish(bbox_arr)
+
+
+    # time_check_7 = time.time()
+    # print("use {:.4f} seconds for read lidar to numpy".format(time_check_1 - time_check_0))
+    # print("use {:.4f} seconds for read image to numpy".format(time_check_2 - time_check_1))
+    # print("use {:.4f} seconds for crop_image".format(time_check_3 - time_check_2))
+    # print("use {:.4f} seconds for lidar_to_top".format(time_check_4 - time_check_3))
+    # print("use {:.4f} seconds for save top.npy and rgb.npy".format(time_check_5 - time_check_4))
+    # print("use {:.4f} seconds for rpc predict: boxes len={}".format(time_check_6 - time_check_5, len(boxes3d)))
+    # print("use {:.4f} seconds for publish MarkerArray".format(time_check_7 - time_check_6))
+    # print("use {:.4f} seconds for total".format(time_check_7 - time_check_0))
 
     # if 0:   # if show the images for debug
     #     top_image = py2utils.draw_top_image(top)
@@ -204,6 +212,14 @@ def sync_callback(msg1, msg2):
     #     cv2.waitKey(1)
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="visulaize for result")
+    parser.add_argument('model_name', type=str, nargs='?', default='', help='calibration filename')
+    args = parser.parse_args(rospy.myargv()[1:])
+
+    model_name = args.model_name
+    if model_name is None:
+        raise ValueError('Please input model name')
+
     rospy.init_node('detect_node')
     pub = rospy.Publisher("bbox", MarkerArray, queue_size=1)
     pub_detections = rospy.Publisher("bbox/detections", BboxArray, queue_size=1)

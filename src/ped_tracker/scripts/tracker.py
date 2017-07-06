@@ -76,7 +76,7 @@ class Tracker:
         self.latest_detection_time = None
 
         self.mot_tracker = Sort(max_age=3,
-                                min_hits=6, 
+                                min_hits=2,
                                 iou_threshold=0.1, 
                                 max_time_elapsed=2)
         self.min_detections = 7
@@ -93,9 +93,6 @@ class Tracker:
         print('tracker node initialzed')
         rospy.Timer(rospy.Duration(0.05), self.publish_predictions)
         time4 = time.time()
-        rospy.logerr('t1: {}'.format(time2-time1))
-        rospy.logerr('t2: {}'.format(time3 - time2))
-        rospy.logerr('t3: {}'.format(time4 - time3))
 
         rospy.spin()
 
@@ -104,7 +101,7 @@ class Tracker:
         """ saves the latest bbox detections and latest detection time
         """
         self.latest_detection_time = rospy.get_rostime()
-        print("Bboxes detected at", self.latest_detection_time.to_sec())
+        # print("Bboxes detected at", self.latest_detection_time.to_sec())
         self.detected_bboxes = bbox_msg
         # rospy.logerr('bbox_msg={}'.format(bbox_msg))
 
@@ -113,7 +110,7 @@ class Tracker:
     def publish_predictions(self, event):
         # wait until first detection
         # print('enter here? ', time.time())
-        rospy.logerr('before return: {}'.format(time.time()))
+        # rospy.logerr('before return: {}'.format(time.time()))
         if self.detected_bboxes is None:
             return
 
@@ -187,17 +184,12 @@ class Tracker:
             m.color.a, m.color.r, m.color.g, m.color.b = \
                 0.5, 1.0, 1.0, 0.0
             markerArray1.markers.append(m)
-            rospy.logerr('markerArray1.markers={}'.format(markerArray1.markers))
-
-
-
-
-
+            # rospy.logerr('markerArray1.markers={}'.format(markerArray1.markers))
 
 
 
         # rospy.logerr('here: ', bboxArray)
-        rospy.logerr('time here: ')
+        # rospy.logerr('time here: ')
         self.predict_pub.publish(bboxArray)
         self.markerArray.publish(markerArray1)
 

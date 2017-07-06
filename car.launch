@@ -1,0 +1,22 @@
+<launch>
+    <arg name="bag_DIR" default="/hdd/data/didi_competition/didi_dataset/round2/Data" />
+    <arg name="bag" default="car/testing/ford01" />
+    <!--
+        <arg name="tracklet_DIR" default="/hdd3/raw_split"/>
+    -->
+    <arg name="rate" default="0.1" />
+
+    <node name="detector" pkg="detector" type="pipeline.py" args="ped"/>
+    <!--
+        <node name="tracker" pkg="tracker" type="tracker.py"/>
+    -->
+    <node name="projection" pkg="projection" type="visualize_result.py" args="$(find projection)/scripts/ost_new.yaml"/>
+
+	<node name="ped_tracker" pkg="ped_tracker" type="tracker.py"
+	args="$(arg bag_DIR)/$(arg bag).bag"/>
+	<node name="velodyne" pkg="velodyne_pointcloud" type="cloud_node" args="">
+        <param name="calibration" value="$(find velodyne_pointcloud)/params/32db.yaml" />
+    </node>
+    <node name="rosbag" pkg="rosbag" type="play" args="-r $(arg rate) -l --clock $(arg bag_DIR)/$(arg bag).bag"/>
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find projection)/launch/config-result.rviz"  />
+</launch>
