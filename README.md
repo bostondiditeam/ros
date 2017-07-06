@@ -6,7 +6,9 @@ This document describes the final submitted codes for team **"In It To Win It"**
 * ROS Indigo
 * ros-indigo-velodyne
 * Python3.5.3(For MV3D neural nets)
-* Python2.7.13(For ROS node related.)
+* Python2.7.13(For ROS node related)
+* Tensorflow-1.1
+* Keras
 
 
 # Background and Overview
@@ -38,22 +40,16 @@ net which described inside the paper.
 
 # Setup
 
-## Copy the entire `src` folder to your catkin workspace. For example,
-```
-cp -r src ~/catkin_ws/
-cd ~/catkin_ws/
-```
-
-## Note: Make sure the following files are executable (use `chmod +x` if some script cannot run, please make sure that
+## Note: Make sure the following files are executable 
+(use `chmod +x` if some script cannot run, please make sure that
  script has execute permissions):
-..* `~/catkin_ws/src/detector/scripts/predict_rpc.py`
-..* `~/catkin_ws/src/detector/scripts/pipeline.py`
-..* `~/catkin_ws/src/tracker/scripts/tracker.py`
+..* `~/ros/src/detector/scripts/predict_rpc.py`
+..* `~/ros/src/detector/scripts/pipeline.py`
+..* `~/ros/src/tracker/scripts/tracker.py`
 
 
 ## Download the neural net weights, and put it under the right directory:
 A. Download the model weights [here](https://www.dropbox.com/sh/8g64ho1tgpvja58/AABLVoA20vZd7Z2Ab_aemVZ5a?dl=0)
-
 
 B. Put the zip file under ros/src/detector/MV3D/checkpoint directory
 
@@ -98,26 +94,47 @@ checkpoint/
 
 ```
 
-2. create the ros workspace in the ros dir
+## create the ros workspace in the ros dir
 ```
 $ catkin_make
 ```
-3. source ros env
+## source ros env
 ```
 $ source devel/setup.bash
 ```
-4. install all dependencies:
+## install all dependencies:
 
+Python 2 dependency(ROS node related.):
+
+```
+pip install em
+pip install numpy
+pip install opencv-python
+pip install pyyaml
+pip install matplotlib
+pip install easydict
+pip install numba
+conda install pyqt=4
+pip install filterpy
+pip install sklearn
+```
+
+For more dependencies, please refer to: 
+https://docs.google.com/document/d/1uY3EpkE5j5dA8FoAxh0FGwRQ9Ly1Y25LjobJo8I1Rgk/edit
+or refer to our yaml files. 
 
 ### go to catkin_ws/src/detector/MV3D/src directory
 ```
-sudo chmod 755 ./make.sh
+# sudo chmod +x ./make.sh (if cannot make)
 ./make.sh
+
 ```
+
 If you encounter issues running the ./make.sh script, please go to [here](./docs/README_MV3D.md) for reference. 
 
 
 1. Run the python 3(Please note it should be python 3, for other parts, we use python2.7) predict service
+
 ```
 cd catkin_ws/src/detector/scripts/run_model.py
 # for pedestrain detection, run the following line
