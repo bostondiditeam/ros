@@ -173,6 +173,7 @@ def sync_callback(msg1, msg2):
             markerArray.markers.append(m)
 
             #bbox_arr
+            bbox.header.stamp = msg2.header.stamp
             bbox = Bbox()
             bbox.x, bbox.y, bbox.z = translation[i]
             bbox.h, bbox.w, bbox.l = size[i]
