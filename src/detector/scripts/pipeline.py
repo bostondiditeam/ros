@@ -11,14 +11,22 @@ import tf
 
 #os.system('roslaunch velodyne_pointcloud 32e_points.launch &')
 sys.path.append(os.path.join(sys.path[0],"../MV3D/src"))
+# sys.path.append(os.path.join(sys.path[0],"../../bbox_driver"))
+
+
+a = os.path.abspath('../../bbox_driver')
+
+sys.path.append(a)
 #import net.utility.draw  as nud
 
 import rospy
+rospy.logerr('here: ', a)
 import math
 from sensor_msgs.msg import Image
 from sensor_msgs.msg import NavSatFix
 from sensor_msgs.msg import PointCloud2, PointField
 from visualization_msgs.msg import Marker,MarkerArray
+from bbox_driver.msg import BboxArray,Bbox
 # ROS Image message -> OpenCV2 image converter
 from cv_bridge import CvBridge, CvBridgeError
 import message_filters
@@ -140,6 +148,9 @@ def sync_callback(msg1, msg2):
 
     # publish (boxes3d) to tracker_node
     markerArray = MarkerArray()
+    bbox_arr = BboxArray()
+    now = rospy.get_rostime()
+    bbox_arr.header.stamp = now
     if len(boxes3d) > 0:
         translation, size, rotation = boxes3d_decompose(np.array(boxes3d))
         for i in range(len(boxes3d)):
@@ -160,7 +171,15 @@ def sync_callback(msg1, msg2):
             m.color.a, m.color.r, m.color.g, m.color.b = \
                 0.5, 1.0, 1.0, 0.0
             markerArray.markers.append(m)
+
+            #bbox_arr
+            bbox = Bbox()
+            bbox.x, bbox.y, bbox.z = translation[i]
+            bbox.h, bbox.w, bbox.l = size[i]
+            bbox.score=1.
+            bbox_arr.bboxes.append(bbox)
     pub.publish(markerArray)
+    pub_detections.publish(bbox_arr)
     time_check_7 = time.time()
     print("use {:.4f} seconds for read lidar to numpy".format(time_check_1 - time_check_0))
     print("use {:.4f} seconds for read image to numpy".format(time_check_2 - time_check_1))
@@ -186,6 +205,7 @@ def sync_callback(msg1, msg2):
 if __name__ == '__main__':
     rospy.init_node('detect_node')
     pub = rospy.Publisher("bbox", MarkerArray, queue_size=1)
+    pub_detections = rospy.Publisher("bbox/detections", BboxArray, queue_size=1)
 
     # rospy.Subscriber('/image_raw', Image, image_callback)
     # rospy.Subscriber('/velodyne_points', PointCloud2, velodyne_points)
