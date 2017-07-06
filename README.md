@@ -190,6 +190,3 @@ Once one loop of the rosbag playback has completed (frame index restarts from be
 
  
 ---
-
-
-
