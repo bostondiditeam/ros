@@ -1,31 +1,103 @@
-# ros
-Boston Didi Challenge matters pertaining to Robot Operating System (ROS)
+# Purpose
+This document describes the final submitted codes for team **"In It To Win It"** for the [Udacity Self-Driving Car Challenge 2017](https://challenge.udacity.com/).
 
-# Installation
+# System Settings and Dependencies
+* Ubuntu 14.04
+* ROS Indigo
+* ros-indigo-velodyne
+* Python3.5.3(For MV3D neural nets)
+* Python2.7.13(For ROS node related.)
 
-According to the Submission section for the Rules at https://challenge.udacity.com/:
+
+# Background and Overview
+Our ROS implementation mainly consists of three nodes:
+* detector(give predictions from MV3D neural net)
+* ped_tracker(for pedestrian tracking)
+* car_tracker(for pedestrian tracking)
+saved as two ROS packages with the same names.
+
+![alt text](docs/Round2_ROS_Pipeline.png "ROS Nodes Illustration")
+
+## Detector Node
+The detector node implements our main detection algorithm based on the [Multi-View 3D Object Detection Network for Autonomous Driving](https://arxiv.org/abs/1611.07759) algorithm, using a tuned model with a set of pre-trained weights (see below). This algorithm uses the Lidar top-view, front-view, and the camera images to detect the first estimation of the bounding boxes.
+
+## Tracker Node
+The tracker node implements Kalman filter to track the target obstacles. It uses the [SORT](https://github.com/mandarup/multi-object-tracking) algorithm for multi-object tracking to remove false positives. In addition, it also implements Kalman-based sensor fusion to include mesurement updates from radar messages. Furthermore, this node is responsible for producing a detection output in a timeframe required by the competition (10Hz), irrespective of the sensors' measurement frequencies and MV3D detection processing time. 
+
+# Training of MV3D Network
+To obtain the set of weights, first train the MV3D network as follows:
+
+```[TO-ADD]```
+
+# Setup
+
+* Copy the entire `src` folder to your catkin workspace. For example,
 ```
-Solution must run in the provided ROS framework (Ubuntu 14.04, ROS Indigo)
+cp -r src ~/catkin_ws/
+cd ~/catkin_ws/
 ```
 
-If you are running a Linux host, please be sure to use Ubuntu 14.04.
+* Note: Make sure the following files are executable (use `chmod +x`):
+..* `~/catkin_ws/src/detector/scripts/predict_rpc.py`
+..* `~/catkin_ws/src/detector/scripts/pipeline.py`
+..* `~/catkin_ws/src/tracker/scripts/tracker.py`
 
-
-For instructions on installing ROS using Docker, please click [here](./docs/installation.md)
-*(Note: competition requires ROS Indigo, which is not compatible with Ubuntu 16.04).*
-
-# ROS bag
-Click [here](./docs/rosbag.md) for an overview of a ROS bag.
-
-Click [here](./docs/rosbag_exploration.ipynb) to look at the Jupyter notebook to get started with exploring the rosbag data from Udacity.
-
-# ROS quick tutorial
-Click [here](./docs/ros_quick_tutorial.md) for a quick tutorial of ROS.
-
-1. Run the python 3 predict service
+* Build the catkin package
 ```
-$ python ./run_model.py -m ped 
+catkin_make
+source ~/catkin_ws/devel/setup.bash
+``` 
+
+# To Run
+
+## 1. Download the neural net weights, and put it under the right directory:
+
+A. Download the model weights [here](https://www.dropbox.com/sh/8g64ho1tgpvja58/AABLVoA20vZd7Z2Ab_aemVZ5a?dl=0)
+
+
+B. Put the zip file under ros/src/detector/MV3D/checkpoint directory
+
+C. After unzip the zipped file, it will show 2 directories: `car` and `ped`. And its structure will be like the 
+following: 
 ```
+checkpoint/
+├── car
+│   ├── fusion
+│   │   ├── checkpoint
+│   │   ├── fusion.data-00000-of-00001
+│   │   ├── fusion.index
+│   │   └── fusion.meta
+│   ├── image_feature
+│   │   ├── checkpoint
+│   │   ├── image_feature.data-00000-of-00001
+│   │   ├── image_feature.index
+│   │   └── image_feature.meta
+│   └── top_view_rpn
+│       ├── checkpoint
+│       ├── top_view_rpn.data-00000-of-00001
+│       ├── top_view_rpn.index
+│       └── top_view_rpn.meta
+└── ped
+    ├── fusion
+    │   ├── checkpoint
+    │   ├── fusion.data-00000-of-00001
+    │   ├── fusion.index
+    │   └── fusion.meta
+    ├── image_feature
+    │   ├── checkpoint
+    │   ├── image_feature.data-00000-of-00001
+    │   ├── image_feature.index
+    │   └── image_feature.meta
+    └── top_view_rpn
+        ├── checkpoint
+        ├── top_view_rpn.data-00000-of-00001
+        ├── top_view_rpn.index
+        └── top_view_rpn.meta
+
+8 directories, 24 files
+
+```
+
 
 2. create the ros workspace in the ros dir
 ```
@@ -35,48 +107,64 @@ $ catkin_make
 ```
 $ source devel/setup.bash
 ```
+4. install all dependencies:
 
-the tag is the tag for taining weights directory name, which tag is your training tag.
+
+### go to catkin_ws/src/detector/MV3D/src directory
+```
+sudo chmod 755 ./make.sh
+./make.sh
+```
+If you encounter issues running the ./make.sh script, please go to [here](./docs/README_MV3D.md) for reference. 
+
+
+1. Run the python 3(Please note it should be python 3, for other parts, we use python2.7) predict service
+```
+cd catkin_ws/src/detector/scripts/run_model.py
+# for pedestrain detection, run the following line
+$ python ./run_model.py -m ped
+# for car detection, run the following line
+$ python ./run_model.py -m car
+
+```
 
 4. run all from ros launch
 ```
+# please change the bag_DIR and bag parameters according to your local environment.
+# for pedestrain detection, run the following roslaunch
+
 roslaunch ped.launch  bag:=ped_test rate:=0.3 bag_DIR:=/media/stu/hdd1_1t/competition_data/didi_dataset/round2/test_ped
+# for car detection, run this line instead
+roslaunch car.launch  bag:=ford01 rate:=0.3 bag_DIR:=/media/stu/hdd1_1t/competition_data/didi_dataset/round2/test_car
 ```
 
-if you run the launche file
-it will run automaticly
-- detector node
-- tracker node
-- projection node
-- RViz tooks
-- and rosbag play the bag which you need
 
-and the tracklet xml will create in the current directory
+## 1. Run detector node: 
 
-in the visible tools
-- the yellow box is the result predicted by network,
-- the green box is the result by kalman filter in tracker ros node
-
-the launch file is
-and <<bag>> and <<rate>> is defined in the launch xml
-``` xml
-<launch>
-    <!--change it to your bag directory-->
-    <arg name="bag_DIR" default="/ext/Data/Round_2/release/" />
-    <!--change it to the mame which bag you need to run-->
-    <arg name="bag" default="car/testing/ford01" />
-    <arg name="rate" default="0.2" />
-
-    <node name="detector" pkg="detector" type="pipeline.py"/>
-    <node name="tracker" pkg="tracker" type="tracker.py"/>
-
-    <node name="projection" pkg="projection" type="visualize_result.py" args="$(find projection)/scripts/ost_new.yaml"/>
-    <node name="velodyne" pkg="velodyne_pointcloud" type="cloud_node" args="">
-        <param name="calibration" value="$(find velodyne_pointcloud)/params/32db.yaml" />
-    </node>
-
-    <node name="rosbag" pkg="rosbag" type="play" args="-r $(arg rate) -l --clock $(arg bag_DIR)/$(arg bag).bag"/>
-    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find projection)/launch/config-result.rviz"  />
-</launch>
-
+### A. for pedestrian obstacle
+ 
+run ROS launch file for pedestrian
+ 
 ```
+roslaunch launch/[TO-ADD]
+```
+
+### B. for car obstacle
+
+run ROS launch file for cars
+ 
+```
+roslaunch launch/[TO-ADD]
+```
+
+
+# Output
+The final bounding box output will be published by the `tracker` node in the form of `PoseArray` message for obstacle position and orientation.
+
+Once one loop of the rosbag playback has completed (frame index restarts from beginning), a tracklet file will be generated and saved in the same folder.
+
+ 
+---
+
+
+
