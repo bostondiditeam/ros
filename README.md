@@ -160,7 +160,7 @@ $ python ./run_model.py -m car
 
 roslaunch ped.launch  bag:=ped_test rate:=0.3 bag_DIR:=/media/stu/hdd1_1t/competition_data/didi_dataset/round2/test_ped
 # for car detection, run this line instead
-roslaunch car.launch  bag:=ford01 rate:=0.3 bag_DIR:=/media/stu/hdd1_1t/competition_data/didi_dataset/round2/test_car
+roslaunch car.launch  bag:=ford03 rate:=0.3 bag_DIR:=/media/stu/hdd1_1t/competition_data/didi_dataset/round2/test_car
 ```
 
 
