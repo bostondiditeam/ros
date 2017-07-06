@@ -19,7 +19,12 @@ saved as two ROS packages with the same names.
 ![alt text](docs/Round2_ROS_Pipeline.png "ROS Nodes Illustration")
 
 ## Detector Node
-The detector node implements our main detection algorithm based on the [Multi-View 3D Object Detection Network for Autonomous Driving](https://arxiv.org/abs/1611.07759) algorithm, using a tuned model with a set of pre-trained weights (see below). This algorithm uses the Lidar top-view, front-view, and the camera images to detect the first estimation of the bounding boxes.
+The detector node implements our main detection algorithm based on the [Multi-View 3D Object Detection Network for 
+Autonomous Driving](https://arxiv.org/abs/1611.07759) algorithm, using a tuned model with a set of pre-trained 
+weights (see [here](./docs/README_MV3D.md)). This algorithm uses the Lidar top-view, front-view, and the camera images
+ to detect the 
+first 
+estimation of the bounding boxes.
 
 ## Tracker Node
 The tracker node implements Kalman filter to track the target obstacles. It uses the [SORT](https://github.com/mandarup/multi-object-tracking) algorithm for multi-object tracking to remove false positives. In addition, it also implements Kalman-based sensor fusion to include mesurement updates from radar messages. Furthermore, this node is responsible for producing a detection output in a timeframe required by the competition (10Hz), irrespective of the sensors' measurement frequencies and MV3D detection processing time. 
@@ -27,31 +32,26 @@ The tracker node implements Kalman filter to track the target obstacles. It uses
 # Training of MV3D Network
 To obtain the set of weights, first train the MV3D network as follows:
 
-```[TO-ADD]```
+- First trained our rpn net therefore it can extract lidar top view features nicely and gives accurate proposals.
+- Then froze the RPN(regional proposal net) and train rgb feature extractor(already used pretrained weights) and fuse 
+net which described inside the paper. 
 
 # Setup
 
-* Copy the entire `src` folder to your catkin workspace. For example,
+## Copy the entire `src` folder to your catkin workspace. For example,
 ```
 cp -r src ~/catkin_ws/
 cd ~/catkin_ws/
 ```
 
-* Note: Make sure the following files are executable (use `chmod +x`):
+## Note: Make sure the following files are executable (use `chmod +x` if some script cannot run, please make sure that
+ script has execute permissions):
 ..* `~/catkin_ws/src/detector/scripts/predict_rpc.py`
 ..* `~/catkin_ws/src/detector/scripts/pipeline.py`
 ..* `~/catkin_ws/src/tracker/scripts/tracker.py`
 
-* Build the catkin package
-```
-catkin_make
-source ~/catkin_ws/devel/setup.bash
-``` 
 
-# To Run
-
-## 1. Download the neural net weights, and put it under the right directory:
-
+## Download the neural net weights, and put it under the right directory:
 A. Download the model weights [here](https://www.dropbox.com/sh/8g64ho1tgpvja58/AABLVoA20vZd7Z2Ab_aemVZ5a?dl=0)
 
 
@@ -97,7 +97,6 @@ checkpoint/
 8 directories, 24 files
 
 ```
-
 
 2. create the ros workspace in the ros dir
 ```
