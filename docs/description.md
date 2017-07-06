@@ -47,6 +47,56 @@ source ~/catkin_ws/devel/setup.bash
 
 # To Run
 
+## 1. Download the neural net weights, and put it under the right directory:
+
+A. Download the model weights here: 
+
+B. Put the zip file under ros/src/detector/MV3D/checkpoint directory
+
+C. After unzip the zipped file, it will show 2 directories: `car` and `ped`. And its structure will be like the 
+following: 
+```
+checkpoint/
+├── car
+│   ├── fusion
+│   │   ├── checkpoint
+│   │   ├── fusion.data-00000-of-00001
+│   │   ├── fusion.index
+│   │   └── fusion.meta
+│   ├── image_feature
+│   │   ├── checkpoint
+│   │   ├── image_feature.data-00000-of-00001
+│   │   ├── image_feature.index
+│   │   └── image_feature.meta
+│   └── top_view_rpn
+│       ├── checkpoint
+│       ├── top_view_rpn.data-00000-of-00001
+│       ├── top_view_rpn.index
+│       └── top_view_rpn.meta
+└── ped
+    ├── fusion
+    │   ├── checkpoint
+    │   ├── fusion.data-00000-of-00001
+    │   ├── fusion.index
+    │   └── fusion.meta
+    ├── image_feature
+    │   ├── checkpoint
+    │   ├── image_feature.data-00000-of-00001
+    │   ├── image_feature.index
+    │   └── image_feature.meta
+    └── top_view_rpn
+        ├── checkpoint
+        ├── top_view_rpn.data-00000-of-00001
+        ├── top_view_rpn.index
+        └── top_view_rpn.meta
+
+8 directories, 24 files
+
+```
+
+
+
+ 
 ## 1. Run detector node: 
 ### A. for pedestrian obstacle
  

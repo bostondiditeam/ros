@@ -76,7 +76,7 @@ class Tracker:
         self.latest_detection_time = None
 
         self.mot_tracker = Sort(max_age=3,
-                                min_hits=6, 
+                                min_hits=2,
                                 iou_threshold=0.1, 
                                 max_time_elapsed=2)
         self.min_detections = 7
