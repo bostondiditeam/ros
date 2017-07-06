@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>tracker</name>
+  <name>car_tracker</name>
   <version>0.0.0</version>
   <description>The tracker node package</description>
 

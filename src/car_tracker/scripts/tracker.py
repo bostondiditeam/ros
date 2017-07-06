@@ -114,9 +114,9 @@ class Tracker:
             rospy.logerr('\ndetections ={}\ntype={}\n'.format(detections,type(detections)))
             rospy.logerr('\nself.tracked_targets ={}\nself.tracked_ids={}\n'.
                          format(self.tracked_targets, self.tracked_ids))
-            path = os.path.join(log_dir,'detections_%05d'%(log_count))
-            np.save(path, detections)
-            rospy.logerr('save: {} ok'.format(path))
+            # path = os.path.join(log_dir,'detections_%05d'%(log_count))
+            # np.save(path, detections)
+            # rospy.logerr('save: {} ok'.format(path))
             log_count=log_count+1
 
 
@@ -150,7 +150,7 @@ class Tracker:
     def handle_lidar_msg(self, msg):
 
         self.ros_publish_final_bbox()
-        rospy.logerr('pulished bbox: time: {}'.format(time.time()))
+        # rospy.logerr('pulished bbox: time: {}'.format(time.time()))
 
     def handle_bbox_msg(self,msg):
         # if (not self.tracklet_generated) and (len(msg.markers)>0):
@@ -224,13 +224,14 @@ class Tracker:
                 0.5, 0.0, 1.0, 0.0
             markerArray.markers.append(m)
 
+        rospy.logerr('markerArray.markers={}'.format(markerArray.markers))
         self.pub.publish(markerArray)
 
     def startlistening(self):
         rospy.init_node('tracker', anonymous=True)
         #rospy.Subscriber('/image_raw', Image, self.handle_image_msg) # for frame number
         rospy.Subscriber('/velodyne_points', PointCloud2, self.handle_lidar_msg) # for timing data
-        rospy.Subscriber("/bbox", MarkerArray, self.handle_bbox_msg)
+        rospy.Subscriber("/bbox/for_car_tracker", MarkerArray, self.handle_bbox_msg)
         self.pub = rospy.Publisher("bbox_final", MarkerArray, queue_size=1)
         print('tracker node initialzed')
         rospy.spin()

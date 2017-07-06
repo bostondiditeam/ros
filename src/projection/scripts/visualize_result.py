@@ -94,7 +94,7 @@ class Projection:
         self._draw_bblox_image()
 
     def handle_bbox_final_msg(self, bbox_final_msg):
-        if self.camera_image == None:
+        if self.camera_image is None:
             return
         self.kalman_bbox = bbox_final_msg.markers
         self._draw_bblox_image()

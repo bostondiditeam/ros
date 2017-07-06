@@ -171,6 +171,7 @@ def sync_callback(msg1, msg2):
                     0.5, 1.0, 1.0, 0.0
                 markerArray.markers.append(m)
 
+        rospy.logerr('markerArray.markers={}'.format(markerArray.markers))
         pub.publish(markerArray)
 
     elif model_name == 'ped':
@@ -221,7 +222,7 @@ if __name__ == '__main__':
         raise ValueError('Please input model name')
 
     rospy.init_node('detect_node')
-    pub = rospy.Publisher("bbox", MarkerArray, queue_size=1)
+    pub = rospy.Publisher("/bbox/for_car_tracker", MarkerArray, queue_size=1)
     pub_detections = rospy.Publisher("bbox/detections", BboxArray, queue_size=1)
 
     # rospy.Subscriber('/image_raw', Image, image_callback)
